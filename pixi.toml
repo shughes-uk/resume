@@ -19,6 +19,7 @@ frontend-install = { cmd = "npm install", cwd = "frontend" }
 frontend-lint = { cmd = "npm run lint", cwd = "frontend", depends_on = [
     "frontend-install",
 ] }
+terraform-format = { cmd = "terraform fmt", cwd = "terraform" }
 
 [dependencies]
 awscli = ">=2.15.36,<2.16"
