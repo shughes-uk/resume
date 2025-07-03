@@ -81,7 +81,7 @@ export const GetInTouchCard = (): React.ReactElement => {
             component={Link}
             size="small"
             variant="contained"
-            href="https://calendly.com/shughes-uk/30min"
+            href="https://calendly.com/shughes-uk/60-min-chat"
             target="_blank"
             rel="noreferrer"
           >
