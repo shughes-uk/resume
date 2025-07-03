@@ -1,5 +1,4 @@
-import { Stack, Typography } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
+import { Grid2, Stack, Typography } from "@mui/material";
 import { GetInTouchCard } from "./GetInTouchCard";
 // import { LoginCard } from "./LoginCard";
 // import { useContext } from "react";
@@ -19,7 +18,7 @@ export const LoginView = (): React.ReactElement => {
         justifyContent={"center"}
         alignItems={"center"}
       >
-        <Grid2 md={6} sx={{ minWidth: "fit-content" }}>
+        <Grid2 size={{ md: 6 }} sx={{ minWidth: "fit-content" }}>
           <Typography
             variant={"h1"}
             sx={{
@@ -46,9 +45,8 @@ export const LoginView = (): React.ReactElement => {
           </Typography>
         </Grid2>
         <Grid2
-          md={4}
-          smOffset={0}
-          mdOffset={1}
+          size={{ md: 4 }}
+          offset={{ sm: 0, md: 1 }}
           sx={{
             maxWidth: "500px",
             minWidth: "fit-content",

@@ -8,10 +8,10 @@ import {
   CardHeader,
   CardMedia,
   Divider,
+  Grid2,
   Stack,
   Typography,
 } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import ResumeThumbnail from "../../assets/resume-thumbnail.png";
 import MeetingThumbnail from "../../assets/meeting-thumbnail.png";
 import GithubThumbnail from "../../assets/github-thumbnail.png";
@@ -118,16 +118,16 @@ export const HomeView = (): React.ReactElement => {
       </Typography>
       <Divider />
       <Grid2 container spacing={2}>
-        <Grid2 xs={4} sx={{ minWidth: "450px" }}>
+        <Grid2 size={{ xs: 4 }} sx={{ minWidth: "450px" }}>
           <ResumeCard />
         </Grid2>
-        <Grid2 xs={4} sx={{ minWidth: "450px" }}>
+        <Grid2 size={{ xs: 4 }} sx={{ minWidth: "450px" }}>
           <BookMeetingCard />
         </Grid2>
-        <Grid2 xs={4} sx={{ minWidth: "450px" }}>
+        <Grid2 size={{ xs: 4 }} sx={{ minWidth: "450px" }}>
           <GithubCard />
         </Grid2>
-        <Grid2 xs={4} sx={{ minWidth: "450px" }}>
+        <Grid2 size={{ xs: 4 }} sx={{ minWidth: "450px" }}>
           <ContactCard />
         </Grid2>
       </Grid2>

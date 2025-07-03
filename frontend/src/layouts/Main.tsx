@@ -5,6 +5,7 @@ import {
   Container,
   Divider,
   Drawer,
+  Grid2,
   IconButton,
   List,
   ListItemButton,
@@ -17,7 +18,6 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
 import { NavLink, Outlet } from "react-router-dom";
 import { UserContext } from "../components/context/user";
 import { useContext, useRef, useState } from "react";
@@ -77,7 +77,7 @@ export const MainLayout = (): React.ReactElement => {
                 </Typography>
               </Stack>
             </Grid2>
-            <Grid2 xsOffset="auto">
+            <Grid2 offset={{ xs: "auto" }}>
               <IconButton
                 sx={{ padding: 0 }}
                 ref={anchorEl}
