@@ -153,6 +153,7 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
   }, [paperRef]);
   const sunSize = 80;
   const sunGlowSize = 200;
+  const sunGlowColor = "255,255,200";
   return (
     <Paper
       ref={setPaperRef}
@@ -187,7 +188,7 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           width: sunGlowSize,
           height: sunGlowSize,
           borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(255,255,200,0.4) 0%, rgba(255,255,200,0.2) 30%, rgba(255,255,200,0) 70%)`,
+          background: `radial-gradient(circle, rgba(${sunGlowColor},0.4) 0%, rgba(${sunGlowColor},0.2) 30%, rgba(${sunGlowColor},0) 70%)`,
           filter: "blur(20px)",
           opacity: daySkyOpacity * 0.8,
           zIndex: -1,
@@ -203,7 +204,7 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           height: sunSize,
           borderRadius: "50%",
           background: `radial-gradient(circle, rgba(255,255,220,1) 0%, rgba(255,255,180,0.95) 50%, rgba(255,250,150,0.85) 100%)`,
-          boxShadow: `0 0 60px 15px rgba(255,255,200,0.5)`,
+          boxShadow: `0 0 60px 15px rgba(${sunGlowColor},0.5)`,
           opacity: daySkyOpacity,
           zIndex: -1,
           pointerEvents: "none",
@@ -240,30 +241,33 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           opacity: nightSkyOpacity,
         }}
       >
-        {stars.map((star, i) => (
-          <Box
-            key={i}
-            sx={{
-              position: "absolute",
-              top: star.y,
-              left: star.x,
-              width: star.size,
-              height: star.size,
-              backgroundColor: "white",
-              borderRadius: "50%",
-              opacity: 1 - star.y / (paperRef?.clientHeight || 0),
-              animation: `twinkle ${star.twinkleDuration}s ease-in-out ${star.twinkleDelay}s infinite`,
-              "@keyframes twinkle": {
-                "0%, 100%": {
-                  opacity: 1 - star.y / (paperRef?.clientHeight || 0),
+        {stars.map((star, i) => {
+          const starOpacity = 1 - star.y / (paperRef?.clientHeight || 0);
+          return (
+            <Box
+              key={i}
+              sx={{
+                position: "absolute",
+                top: star.y,
+                left: star.x,
+                width: star.size,
+                height: star.size,
+                backgroundColor: "white",
+                borderRadius: "50%",
+                opacity: starOpacity,
+                animation: `twinkle ${star.twinkleDuration}s ease-in-out ${star.twinkleDelay}s infinite`,
+                "@keyframes twinkle": {
+                  "0%, 100%": {
+                    opacity: starOpacity,
+                  },
+                  "50%": {
+                    opacity: starOpacity * 0.3,
+                  },
                 },
-                "50%": {
-                  opacity: (1 - star.y / (paperRef?.clientHeight || 0)) * 0.3,
-                },
-              },
-            }}
-          />
-        ))}
+              }}
+            />
+          );
+        })}
       </Box>
       {children}
     </Paper>
