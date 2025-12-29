@@ -114,11 +114,15 @@ const createStars = (count: number, width: number, height: number) => {
   for (let i = 0; i < count; i++) {
     const x = Math.random() * width;
     const y = Math.random() * height;
-    const size = 2;
+    const size = Math.random() * 2 + 1; // Random size between 1 and 3
+    const twinkleDelay = Math.random() * 3; // Random animation delay
+    const twinkleDuration = Math.random() * 2 + 2; // Random duration between 2-4s
     stars.push({
       x,
       y,
       size,
+      twinkleDelay,
+      twinkleDuration,
     });
   }
   return stars;
@@ -147,6 +151,8 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
     }
     return createStars(100, paperRef.clientWidth, paperRef.clientHeight);
   }, [paperRef]);
+  const sunSize = 80;
+  const sunGlowSize = 200;
   return (
     <Paper
       ref={setPaperRef}
@@ -172,6 +178,37 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           }}
         ></Box>
       ))}
+      {/* Sun orb with glow effect */}
+      <Box
+        sx={{
+          position: "absolute",
+          left: sun.x - sunGlowSize / 2,
+          top: sun.y - sunGlowSize / 2,
+          width: sunGlowSize,
+          height: sunGlowSize,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(255,255,200,0.4) 0%, rgba(255,255,200,0.2) 30%, rgba(255,255,200,0) 70%)`,
+          filter: "blur(20px)",
+          opacity: daySkyOpacity * 0.8,
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      />
+      <Box
+        sx={{
+          position: "absolute",
+          left: sun.x - sunSize / 2,
+          top: sun.y - sunSize / 2,
+          width: sunSize,
+          height: sunSize,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(255,255,220,1) 0%, rgba(255,255,180,0.95) 50%, rgba(255,250,150,0.85) 100%)`,
+          boxShadow: `0 0 60px 15px rgba(255,255,200,0.5)`,
+          opacity: daySkyOpacity,
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      />
       <Box
         id="daySky"
         sx={{
@@ -215,6 +252,15 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
               backgroundColor: "white",
               borderRadius: "50%",
               opacity: 1 - star.y / (paperRef?.clientHeight || 0),
+              animation: `twinkle ${star.twinkleDuration}s ease-in-out ${star.twinkleDelay}s infinite`,
+              "@keyframes twinkle": {
+                "0%, 100%": {
+                  opacity: 1 - star.y / (paperRef?.clientHeight || 0),
+                },
+                "50%": {
+                  opacity: (1 - star.y / (paperRef?.clientHeight || 0)) * 0.3,
+                },
+              },
             }}
           />
         ))}
