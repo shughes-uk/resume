@@ -1,10 +1,10 @@
 import { Grid, Stack, Typography } from "@mui/material";
 import { GetInTouchCard } from "./GetInTouchCard";
-import { SkyBox } from "../../components/SkyBox";
+import { VineFrame } from "../../components/VineFrame";
 
 export const HomeView = (): React.ReactElement => {
   return (
-    <SkyBox>
+    <VineFrame>
       <Grid
         container
         sx={{
@@ -56,6 +56,6 @@ export const HomeView = (): React.ReactElement => {
           </Stack>
         </Grid>
       </Grid>
-    </SkyBox>
+    </VineFrame>
   );
 };
