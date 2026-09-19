@@ -6,3 +6,7 @@ sam.synctex.gz
 .ruff_cache
 .env
 __pycache__
+
+# Claude Code
+.claude/worktrees/
+.claude/settings.local.json
