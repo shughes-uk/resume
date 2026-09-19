@@ -10,7 +10,6 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemSecondaryAction,
   ListItemText,
   Stack,
 } from "@mui/material";
@@ -19,7 +18,7 @@ import { CopyButton } from "./CopyButton";
 export const ContactDetails = (): React.ReactElement => {
   return (
     <List dense>
-      <ListItem>
+      <ListItem secondaryAction={<CopyButton text="shughes.uk@gmail.com" />}>
         <ListItemIcon>
           <MailRounded />
         </ListItemIcon>
@@ -28,20 +27,14 @@ export const ContactDetails = (): React.ReactElement => {
             <Link href="mailto:shughes.uk@gmail.com">shughes.uk@gmail.com</Link>
           }
         />
-        <ListItemSecondaryAction>
-          <CopyButton text="shughes.uk@gmail.com" />
-        </ListItemSecondaryAction>
       </ListItem>
-      <ListItem>
+      <ListItem secondaryAction={<CopyButton text="+1-512-909-9300" />}>
         <ListItemIcon>
           <PhoneRounded />
         </ListItemIcon>
         <ListItemText
           primary={<Link href="tel:+15129099300">+1-512-909-9300</Link>}
         />
-        <ListItemSecondaryAction>
-          <CopyButton text="+1-512-909-9300" />
-        </ListItemSecondaryAction>
       </ListItem>
       <ListItem>
         <ListItemIcon>
