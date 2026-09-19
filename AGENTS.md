@@ -13,10 +13,9 @@ Everything runs through pixi; there is no system `terraform`, `node` or `npm`.
 
 ## Rules
 
-- **AWS**: the default profile is the right account. Never put the account number in PR bodies, commits, comments or CI logs — the repo is public. Role ARNs live in repo secrets (masked), never in variables or files.
 - **Terraform**: state is in S3 with native locking. Plans run in CI on PRs; applies are local. Use `-target` when config and live infrastructure disagree — an untargeted apply once rebuilt the deleted backend.
 - **README.md** is the owner's: only remove stale content or fix something factually wrong. Explain changes in the PR instead.
-- **Lint** is oxlint, not ESLint. TypeScript 7 provides `tsc`.
+- **Lint** is oxlint. TypeScript 7 provides `tsc`.
 
 ## Deploy (`scripts/deploy_frontend.py`)
 
