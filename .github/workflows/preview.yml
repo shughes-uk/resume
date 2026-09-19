@@ -1,0 +1,54 @@
+name: Preview
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    # Fork PRs don't get an OIDC token, so only preview branches from this repo
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    environment:
+      name: preview
+      url: https://pr-${{ github.event.pull_request.number }}.preview.samanthahughes.me
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: "us-east-1"
+          mask-aws-account-id: true
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
+        with:
+          pixi-version: v0.81.0
+          cache: true
+          locked: true
+      - name: npm cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pixi run npm ci
+      - name: Build
+        working-directory: frontend
+        # preview mode tags Datadog RUM sessions with env "preview"
+        run: pixi run npm run build -- --mode preview
+      - name: Deploy
+        run: >-
+          pixi run python scripts/deploy_frontend.py
+          --bucket shughes-resume-previews
+          --prefix pr-${{ github.event.pull_request.number }}
+          --no-invalidate
+          --site-url https://pr-${{ github.event.pull_request.number }}.preview.samanthahughes.me

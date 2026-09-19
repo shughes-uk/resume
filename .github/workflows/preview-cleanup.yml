@@ -1,0 +1,42 @@
+name: Preview cleanup
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: "us-east-1"
+          mask-aws-account-id: true
+      - name: Delete preview files
+        # awscli is preinstalled on GitHub's Ubuntu runners
+        run: aws s3 rm "s3://shughes-resume-previews/pr-${{ github.event.pull_request.number }}/" --recursive
+      - name: Mark preview deployments inactive
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const deployments = await github.paginate(github.rest.repos.listDeployments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: "preview",
+              ref: context.payload.pull_request.head.ref,
+            });
+            for (const deployment of deployments) {
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployment.id,
+                state: "inactive",
+              });
+            }
