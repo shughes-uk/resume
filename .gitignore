@@ -5,3 +5,4 @@ sam.synctex.gz
 .pixi
 .ruff_cache
 .env
+__pycache__
