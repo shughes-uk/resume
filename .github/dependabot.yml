@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    # Let a release sit for two weeks before we pick it up
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: terraform
+    directory: /terraform
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      terraform:
+        patterns: ["*"]
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      hooks:
+        patterns: ["*"]

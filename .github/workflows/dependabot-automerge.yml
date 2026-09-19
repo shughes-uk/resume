@@ -1,0 +1,38 @@
+name: Dependabot automerge
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Nothing is checked out: pull_request_target runs with a writable token,
+      # so the PR's own code must never execute here.
+      - name: Wait for CI
+        id: ci
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for _ in $(seq 1 60); do
+            conclusion=$(gh run list --workflow CI --commit "$SHA" --limit 1 --json conclusion --jq '.[0].conclusion // ""')
+            if [ -n "$conclusion" ]; then
+              echo "conclusion=$conclusion" >> "$GITHUB_OUTPUT"
+              break
+            fi
+            sleep 20
+          done
+          echo "CI concluded: ${conclusion:-timed out}"
+          [ "$conclusion" = "success" ]
+      - name: Merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh pr merge "${{ github.event.pull_request.number }}" --squash --delete-branch

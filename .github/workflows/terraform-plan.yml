@@ -5,6 +5,9 @@ on:
 jobs:
   terraform:
     name: "Terraform Plan"
+    # Dependabot PRs get no OIDC token, so they can't reach AWS; CI validates
+    # the config for them instead.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
