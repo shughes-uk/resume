@@ -91,7 +91,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/s2n-1.4.0-h06160fa_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/terraform-1.7.5-ha8f183a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/terraform-1.16.1-h76a2195_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ukkonen-1.0.1-py311hd18a35c_5.conda
@@ -190,7 +190,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/s2n-1.4.0-h5a25046_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/terraform-1.7.5-h652cbe9_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/terraform-1.16.1-h94b2740_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/tk-8.6.13-noxft_h5688188_102.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/ukkonen-1.0.1-py311hc07b1fb_5.conda
@@ -280,7 +280,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ruamel.yaml.clib-0.2.7-py311heffc1b2_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/terraform-1.7.5-h75b854d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/terraform-1.16.1-h01237fd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h892fb3f_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ukkonen-1.0.1-py311h2c37856_5.conda
@@ -2877,27 +2877,31 @@ packages:
   - pkg:pypi/six?source=hash-mapping
   size: 16385
   timestamp: 1733381032766
-- conda: https://conda.anaconda.org/conda-forge/linux-64/terraform-1.7.5-ha8f183a_0.conda
-  sha256: 3e586964c5f3ebb1547d571d1db2c822d3539a165eaced11b51a183ae9920645
-  md5: 6e09de703dd60a6005a03af1135c1e55
+- conda: https://conda.anaconda.org/conda-forge/linux-64/terraform-1.16.1-h76a2195_0.conda
+  sha256: 2d7cff566eb09c1120cca6014912a6680f1d3b46160fee18df1e4ea96f59aa2d
+  md5: ab2520bfca030d585f13aae99f393786
+  depends:
+  - __glibc >=2.17,<3.0.a0
   license: BUSL-1.1
   purls: []
-  size: 19341903
-  timestamp: 1710378377972
-- conda: https://conda.anaconda.org/conda-forge/linux-aarch64/terraform-1.7.5-h652cbe9_0.conda
-  sha256: 6c3646b1d41bf353996b704c77fe03b07829d4424a6cf3d7560247ef5c693ff1
-  md5: 7835148c92a43d942eb3753f906b18cf
+  size: 27813224
+  timestamp: 1788376340163
+- conda: https://conda.anaconda.org/conda-forge/linux-aarch64/terraform-1.16.1-h94b2740_0.conda
+  sha256: d7f879208acc1b0c1e6b40341c353a9703eec0b22432dd6bcc3cd487ffecce7a
+  md5: 1ce37c001efd6488254f621d87298945
   license: BUSL-1.1
   purls: []
-  size: 17351074
-  timestamp: 1710378318319
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/terraform-1.7.5-h75b854d_0.conda
-  sha256: 2d8134c0fea2ec05900c20d97be8f91f0e469b0c2b3393a725141c7cd3fcb365
-  md5: 0f6b8ed4a06df6454e6245eb0be8ef26
+  size: 24693582
+  timestamp: 1788376333219
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/terraform-1.16.1-h01237fd_0.conda
+  sha256: 4d670acc1a8a0fdf76bbac8644914311db3eab879f893d2b130ea9444c0543d9
+  md5: 42905e47cf94591120c2757f1a5ce622
+  depends:
+  - __osx >=11.0
   license: BUSL-1.1
   purls: []
-  size: 18461278
-  timestamp: 1710378659877
+  size: 24532034
+  timestamp: 1788376751807
 - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
   sha256: a84ff687119e6d8752346d1d408d5cf360dee0badd487a472aa8ddedfdc219e1
   md5: a0116df4f4ed05c303811a837d5b39d8

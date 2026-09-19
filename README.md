@@ -34,3 +34,16 @@ Start hacking!
 ## Deployment
 
 All pushes to main are immediately deployed!
+
+## Terraform
+
+Infrastructure lives in `terraform/`. State is stored in the `shughes-resume-tfstate` S3 bucket
+(`us-east-1`, versioned) under `resume/terraform.tfstate`, with S3-native locking. The bucket was
+created by hand and is not managed by this config.
+
+Pull requests get a plan posted as a comment. Applies are run locally:
+
+```shell
+pixi run terraform-plan
+pixi run terraform-apply
+```
