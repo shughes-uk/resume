@@ -1,5 +1,5 @@
-import { Box, Paper } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { Box, Paper, useMediaQuery } from "@mui/material";
+import { memo, useEffect, useMemo, useState } from "react";
 import { getTimes } from "suncalc";
 
 const SunGradientColors = {
@@ -32,29 +32,37 @@ const SunGradientColors = {
   },
 };
 
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
 const getCelestialXY = (
   time: Date,
   width: number,
   height: number,
-  celestialSet: Date,
   celestialRise: Date,
+  celestialSet: Date,
 ) => {
-  const timeAboveHorizon = celestialRise.getTime() - celestialSet.getTime();
+  const timeAboveHorizon = celestialSet.getTime() - celestialRise.getTime();
   const elapsedTimeAboveHorizon = time.getTime() - celestialRise.getTime();
   const elapsedPercentage = elapsedTimeAboveHorizon / timeAboveHorizon;
+  // 0 at sunrise (left edge), 1 at sunset (right edge). y is measured down the
+  // page, so the arc is subtracted from the horizon to lift the sun into view.
   const angle = Math.PI * elapsedPercentage;
   const radius = width / 2;
   return {
-    x: width / 2 + radius * -Math.cos(angle),
-    y: height + radius * Math.sin(angle),
+    x: width / 2 - radius * Math.cos(angle),
+    y: height - radius * Math.sin(angle),
   };
 };
 
 const HOUR_MS = 60 * 60 * 1000;
+// How long before and after a peak that peak's gradient stays on screen.
+const GRADIENT_FADE_MS = 6 * HOUR_MS;
 
 const getCelestialPositions = (time: Date, width: number, height: number) => {
   const latitude = 0;
-  const longitude = time.getTimezoneOffset() / 4;
+  // getTimezoneOffset() is minutes *behind* UTC, so a positive offset means a
+  // western (negative) longitude. 4 minutes of offset is one degree.
+  const longitude = -time.getTimezoneOffset() / 4;
   const sunTimes = getTimes(time, latitude, longitude);
   // suncalc 2 returns null for events that don't happen on a given day. At the
   // equator the sun always rises and sets, but fall back to solar noon +/- 6h
@@ -67,8 +75,8 @@ const getCelestialPositions = (time: Date, width: number, height: number) => {
     time,
     width,
     height,
-    sunset,
     sunrise,
+    sunset,
   );
   const peakTimes = {
     sunrise,
@@ -76,23 +84,24 @@ const getCelestialPositions = (time: Date, width: number, height: number) => {
     sunset,
   } satisfies Record<keyof typeof SunGradientColors, Date>;
 
-  const sunRadialGradients = Object.entries(SunGradientColors).map(
-    ([key, gradient]) => {
-      const gradientColors = Object.entries(gradient)
-        .map(([stop, color]) => {
-          return `${color} ${stop}`;
-        })
-        .join(", ");
+  const sunRadialGradients = Object.entries(SunGradientColors)
+    .map(([key, gradient]) => {
       const peakTime = peakTimes[key as keyof typeof peakTimes];
-      const diff = Math.abs(time.getTime() - peakTime.getTime()) / 1000 / 60; // Difference in minutes
-      const opacity = Math.max(0, 1 - Math.pow(diff / 360, 1));
+      const diff = Math.abs(time.getTime() - peakTime.getTime());
+      const opacity = clamp01(1 - diff / GRADIENT_FADE_MS);
+      const gradientColors = Object.entries(gradient)
+        .map(([stop, color]) => `${color} ${stop}`)
+        .join(", ");
       return {
         name: key,
         gradient: `radial-gradient(circle at ${sunX}px ${sunY}px, ${gradientColors})`,
-        opacity: opacity,
+        opacity,
       };
-    },
-  );
+    })
+    // A fully transparent layer still costs a full-viewport composite, and at
+    // any given moment at most two of the three are visible.
+    .filter(({ opacity }) => opacity > 0);
+
   return {
     x: sunX,
     y: sunY,
@@ -104,69 +113,143 @@ type SkyBoxProps = {
   children?: React.ReactNode;
 };
 
+// The sky is redrawn at most this often. Anything faster just repaints
+// full-viewport gradients that have barely moved.
+const FRAME_INTERVAL_MS = 100;
+// requestAnimationFrame stops in a hidden tab. Capping the step means we resume
+// where we left off instead of fast-forwarding hours of sky in a single frame.
+const MAX_FRAME_STEP_MS = 1000;
+
 const useDateTime = (timeMultiplier = 1) => {
+  const prefersReducedMotion = useMediaQuery(
+    "(prefers-reduced-motion: reduce)",
+  );
   const [dateTime, setDateTime] = useState(() => new Date());
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setDateTime((prevDateTime) => {
-        const elapsedTime = 100 * timeMultiplier;
-        return new Date(prevDateTime.getTime() + elapsedTime);
-      });
-    }, 100);
+    if (prefersReducedMotion) {
+      // Leave the sky on whatever time it is showing; a decoration is not
+      // worth animating for someone who has asked motion to stop.
+      return;
+    }
 
-    return () => {
-      clearInterval(intervalId);
+    let frame = 0;
+    let lastRender = performance.now();
+
+    const tick = (now: number) => {
+      frame = requestAnimationFrame(tick);
+      const elapsed = now - lastRender;
+      if (elapsed < FRAME_INTERVAL_MS) {
+        return;
+      }
+      lastRender = now;
+      // Advance by the time that actually elapsed rather than by the frame
+      // interval, so the sky keeps pace with the clock instead of drifting.
+      const step = Math.min(elapsed, MAX_FRAME_STEP_MS) * timeMultiplier;
+      setDateTime((previous) => new Date(previous.getTime() + step));
     };
-  }, [timeMultiplier]);
+
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [timeMultiplier, prefersReducedMotion]);
 
   return dateTime;
 };
 
-const createStars = (count: number, width: number, height: number) => {
-  console.log(width, height);
-  const stars = [];
-  for (let i = 0; i < count; i++) {
-    const x = Math.random() * width;
-    const y = Math.random() * height;
-    const size = 2;
-    stars.push({
-      id: i,
-      x,
-      y,
-      size,
+const useElementSize = (element: HTMLElement | null) => {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!element) {
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize((previous) =>
+        previous.width === width && previous.height === height
+          ? previous
+          : { width, height },
+      );
     });
-  }
-  return stars;
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, [element]);
+
+  return size;
 };
+
+const STAR_COUNT = 100;
+const STAR_SIZE_PX = 2;
+
+// Positions are fractions of the container so that a resize reflows the sky
+// rather than shuffling every star to a new spot.
+const stars = Array.from({ length: STAR_COUNT }, (_, id) => {
+  const y = Math.random();
+  return {
+    id,
+    x: Math.random(),
+    y,
+    opacity: 1 - y,
+  };
+});
+
+// The star field never changes, so keep it out of the animation's render path.
+const StarField = memo(function StarField() {
+  return (
+    <>
+      {stars.map((star) => (
+        <Box
+          key={star.id}
+          sx={{
+            position: "absolute",
+            top: `${star.y * 100}%`,
+            left: `${star.x * 100}%`,
+            width: STAR_SIZE_PX,
+            height: STAR_SIZE_PX,
+            backgroundColor: "white",
+            borderRadius: "50%",
+            opacity: star.opacity,
+          }}
+        />
+      ))}
+    </>
+  );
+});
+
+const skyLayerStyles = {
+  position: "absolute",
+  inset: 0,
+  backgroundRepeat: "no-repeat",
+  pointerEvents: "none",
+} as const;
+
 export const SkyBox = ({ children }: SkyBoxProps) => {
   const [paperRef, setPaperRef] = useState<HTMLDivElement | null>(null);
+  const { width, height } = useElementSize(paperRef);
   const now = useDateTime(1500);
-  const sun = getCelestialPositions(
-    now,
-    paperRef?.clientWidth || 0,
-    paperRef?.clientHeight || 0,
+
+  const sun = useMemo(
+    () => getCelestialPositions(now, width, height),
+    [now, width, height],
   );
-  const calculateDaySkyOpacity = (sunY: number, height: number) => {
-    const normalizedY = (height - sunY) / height;
-    const opacity = Math.min(1, 0.5 + normalizedY);
-    return opacity;
-  };
-  const daySkyOpacity = calculateDaySkyOpacity(
-    sun.y,
-    paperRef?.clientHeight || 0,
-  );
-  const nightSkyOpacity = 1 - daySkyOpacity;
-  const stars = useMemo(() => {
-    if (!paperRef) {
-      return [];
+
+  const daySkyOpacity = useMemo(() => {
+    if (height === 0) {
+      return 1;
     }
-    return createStars(100, paperRef.clientWidth, paperRef.clientHeight);
-  }, [paperRef]);
+    return clamp01(0.5 + (height - sun.y) / height);
+  }, [sun.y, height]);
+  const nightSkyOpacity = 1 - daySkyOpacity;
+
   return (
     <Paper
       ref={setPaperRef}
       sx={{
+        position: "relative",
         minHeight: "100dvh",
         backgroundColor: "transparent",
       }}
@@ -175,28 +258,17 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
         <Box
           key={gradient.name}
           sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: paperRef?.clientWidth || 0,
-            height: paperRef?.clientHeight || 0,
+            ...skyLayerStyles,
             backgroundImage: gradient.gradient,
-            backgroundRepeat: "no-repeat",
-            filter: "blur(1px)",
             opacity: gradient.opacity,
             zIndex: -1,
           }}
-        ></Box>
+        />
       ))}
       <Box
         id="daySky"
         sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: paperRef?.clientWidth || 0,
-          height: paperRef?.clientHeight || 0,
-          backgroundRepeat: "no-repeat",
+          ...skyLayerStyles,
           zIndex: -2,
           filter: "blur(2px)",
           backgroundImage:
@@ -207,33 +279,14 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
       <Box
         id="nightSky"
         sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: paperRef?.clientWidth || 0,
-          height: paperRef?.clientHeight || 0,
-          backgroundRepeat: "no-repeat",
+          ...skyLayerStyles,
           zIndex: -2,
           backgroundImage:
             "linear-gradient(to bottom, #04090d 0%, #0a2342 99%, #283e51 100%)",
           opacity: nightSkyOpacity,
         }}
       >
-        {stars.map((star) => (
-          <Box
-            key={star.id}
-            sx={{
-              position: "absolute",
-              top: star.y,
-              left: star.x,
-              width: star.size,
-              height: star.size,
-              backgroundColor: "white",
-              borderRadius: "50%",
-              opacity: 1 - star.y / (paperRef?.clientHeight || 0),
-            }}
-          />
-        ))}
+        <StarField />
       </Box>
       {children}
     </Paper>
