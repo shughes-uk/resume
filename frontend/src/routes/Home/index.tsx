@@ -17,7 +17,14 @@ export const HomeView = (): React.ReactElement => {
         }}
         spacing={2}
       >
-        <Grid size={{ md: 6 }} sx={{ minWidth: "fit-content" }}>
+        <Grid
+          size={{ md: 6 }}
+          sx={{
+            minWidth: "fit-content",
+            // The sun's disc crosses this text around noon on wide screens
+            textShadow: "0 1px 14px rgba(10,12,32,0.6)",
+          }}
+        >
           <Typography
             variant={"h1"}
             sx={{

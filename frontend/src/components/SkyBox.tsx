@@ -32,6 +32,10 @@ const SunGradientColors = {
   },
 };
 
+// Gradient stops up to this percentage are the sun; the rest is its glow on
+// the sky around it.
+const SUN_DISC_EDGE = 12;
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 const getCelestialXY = (
@@ -92,9 +96,15 @@ const getCelestialPositions = (time: Date, width: number, height: number) => {
       const gradientColors = Object.entries(gradient)
         .map(([stop, color]) => `${color} ${stop}`)
         .join(", ");
+      // Just the sun itself: the stops out to SUN_DISC_EDGE, then nothing.
+      const discColors = Object.entries(gradient)
+        .filter(([stop]) => parseFloat(stop) <= SUN_DISC_EDGE)
+        .map(([stop, color]) => `${color} ${stop}`)
+        .join(", ");
       return {
         name: key,
         gradient: `radial-gradient(circle at ${sunX}px ${sunY}px, ${gradientColors})`,
+        disc: `radial-gradient(circle at ${sunX}px ${sunY}px, ${discColors}, transparent ${SUN_DISC_EDGE * 1.5}%)`,
         opacity,
       };
     })
@@ -225,7 +235,8 @@ const StarField = memo(function StarField() {
 // the sky by a saturated blue deepens it overhead and clears toward the
 // horizon, which is how a real sky looks anyway. Multiply keeps the colour
 // vivid where a dark overlay would turn it grey, and it leaves the night sky
-// alone because that is already darker than the layer.
+// alone because that is already darker than the layer. It would tint the sun
+// blue as well, so the sun's disc is drawn again on top of it.
 const OVERHEAD_DEPTH =
   "linear-gradient(to bottom, rgb(52,92,190) 0%, rgb(66,108,200) 55%, rgb(150,180,228) 72%, rgb(255,255,255) 88%)";
 
@@ -283,6 +294,17 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           zIndex: -1,
         }}
       />
+      {sun.gradient.map((gradient) => (
+        <Box
+          key={gradient.name}
+          sx={{
+            ...skyLayerStyles,
+            backgroundImage: gradient.disc,
+            opacity: gradient.opacity,
+            zIndex: -1,
+          }}
+        />
+      ))}
       <Box
         id="daySky"
         sx={{
