@@ -19,7 +19,14 @@ frontend-install = { cmd = "npm install", cwd = "frontend" }
 frontend-lint = { cmd = "npm run lint", cwd = "frontend", depends-on = [
     "frontend-install",
 ] }
+terraform-apply = { cmd = "terraform apply", cwd = "terraform", depends-on = [
+    "terraform-init",
+] }
 terraform-format = { cmd = "terraform fmt", cwd = "terraform" }
+terraform-init = { cmd = "terraform init -input=false", cwd = "terraform" }
+terraform-plan = { cmd = "terraform plan -input=false", cwd = "terraform", depends-on = [
+    "terraform-init",
+] }
 
 [dependencies]
 awscli = ">=2.15.36,<2.16"
@@ -27,7 +34,7 @@ git = ">=2.44.0,<2.45"
 nodejs = ">=20.9.0,<20.10"
 pre-commit = ">=3.7.0,<3.8"
 python = ">=3.11.0,<3.13"
-terraform = ">=1.7.5,<1.8"
+terraform = ">=1.16.1,<1.17"
 
 [pypi-dependencies]
 boto3 = "*"

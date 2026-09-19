@@ -1,12 +1,6 @@
 name: "Terraform Plan"
 on:
   pull_request:
-env:
-  TF_CLOUD_ORGANIZATION: "shughesuk"
-  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "resume-workspace"
-  CONFIG_DIRECTORY: "./"
-  TF_DIRECTORY: "./"
 
 jobs:
   terraform:
@@ -14,66 +8,64 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: "us-east-1"
+          mask-aws-account-id: true
       - uses: prefix-dev/setup-pixi@v0.5.1
         with:
           cache: true
           locked: true
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-        id: plan-upload
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-          speculative: true
-
-      - name: Create Plan Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-        id: plan-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
-          plan_only: true
-      - name: Get Plan Output
-        uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.0.0
-        id: plan-output
-        with:
-          plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
+      - name: Terraform Plan
+        id: plan
+        run: |
+          pixi run terraform-plan -no-color -lock=false 2>&1 | tee plan.txt
+          exit "${PIPESTATUS[0]}"
       - name: Update PR
+        if: always()
         uses: actions/github-script@v6
-        id: plan-comment
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // 1. Retrieve existing bot comments for the PR
+            const fs = require("fs");
+            // Only the summary line is posted: the full plan contains ARNs with the account ID,
+            // and this repo is public. The full plan is in the (masked) workflow log.
+            const plan = fs.existsSync("plan.txt") ? fs.readFileSync("plan.txt", "utf8") : "";
+            const summary =
+              plan.match(/^(Plan:.*|No changes\..*)$/m)?.[0] ?? "Plan failed, see the workflow run.";
+            const body = `#### Terraform Plan Output
+            ${summary}
+
+            [Workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            // Replace the previous plan comment so the PR timeline stays readable
             const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
             });
-            const botComment = comments.find(comment => {
-                return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
-            });
-            const output = `#### Terraform Cloud Plan Output
-                \`\`\`
-                Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
-                \`\`\`
-                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
-                `;
-            // 3. Delete previous comment so PR timeline makes sense
+            const botComment = comments.find(
+              (comment) =>
+                comment.user.type === "Bot" &&
+                comment.body.includes("Terraform Plan Output"),
+            );
             if (botComment) {
-                github.rest.issues.deleteComment({
+              await github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: botComment.id,
-                });
+              });
             }
-            github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: output
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
             });
