@@ -33,18 +33,7 @@ Start hacking!
 
 ## Deployment
 
-All pushes to main are immediately deployed! `pixi run frontend-deploy` builds the site, uploads it to
-S3 (fingerprinted `assets/` first with immutable caching, `index.html` last with `no-cache`),
-invalidates CloudFront, deletes files that are no longer part of the build, then smoke-tests the
-live site. Any failed upload fails the deploy.
-
-GitHub Actions reaches AWS through OIDC with one role per job, both defined in
-`terraform/github_oidc.tf`:
-
-- `github-deploy-frontend` (secret `AWS_DEPLOY_ROLE_ARN`) can only write to the site bucket and
-  invalidate the distribution, and can only be assumed by the `frontend-production` environment.
-- `github-terraform-plan` (secret `AWS_PLAN_ROLE_ARN`) is read-only and can only be assumed by
-  `pull_request` workflows.
+All pushes to main are immediately deployed!
 
 ## Terraform
 
