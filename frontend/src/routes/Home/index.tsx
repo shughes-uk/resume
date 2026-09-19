@@ -1,6 +1,7 @@
 import { Grid, Stack, Typography } from "@mui/material";
 import { GetInTouchCard } from "./GetInTouchCard";
 import { SkyBox } from "../../components/SkyBox";
+import { TrustedBy } from "./TrustedBy";
 
 export const HomeView = (): React.ReactElement => {
   return (
@@ -56,6 +57,7 @@ export const HomeView = (): React.ReactElement => {
           </Stack>
         </Grid>
       </Grid>
+      <TrustedBy />
     </SkyBox>
   );
 };
