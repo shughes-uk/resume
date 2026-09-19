@@ -17,15 +17,6 @@ repos:
       - id: ruff-format
   - repo: local
     hooks:
-      - name: frontend-checks
-        id: frontend-checks
-        description: Run frontend checks.
-        language: system
-        types_or: [ts, tsx, jsx, javascript]
-        entry: pixi run frontend-lint
-        pass_filenames: false
-  - repo: local
-    hooks:
       - name: frontend-lint
         id: frontend-lint
         description: Run frontend linting.
@@ -33,11 +24,9 @@ repos:
         types_or: [ts, tsx, jsx, javascript]
         entry: pixi run frontend-lint
         pass_filenames: false
-  - repo: local
-    hooks:
       - name: frontend-format
-        id: frontend-checks
-        description: Run frontend checks.
+        id: frontend-format
+        description: Run frontend formatting.
         language: system
         types_or: [ts, tsx, jsx, javascript]
         entry: pixi run frontend-format

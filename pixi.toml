@@ -7,17 +7,10 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
 version = "0.1.0"
 
 [tasks]
-backend-collect-statics = { cmd = "ENV_NAME=dev python manage.py collectstatic --noinput", cwd = "backend" }
-backend-dev = { cmd = "DEBUG=True ENV_NAME=dev uvicorn resume.asgi:application --reload --log-config logging.yaml", cwd = "backend" }
-backend-migrations = { cmd = "python manage.py migrate", cwd = "backend" }
-frontend-autogen-client = { cmd = "rm -rf src/api-client && npm run autogen-client", cwd = "frontend", depends-on = [
-    "frontend-install",
-] }
 frontend-build = { cmd = "npm run build", cwd = "frontend", depends-on = [
     "frontend-lint",
 ] }
 frontend-deploy = { cmd = "python scripts/deploy_frontend.py", cwd = ".", depends-on = [
-    "backend-collect-statics",
     "frontend-build",
 ] }
 frontend-dev = { cmd = "npm run dev", cwd = "frontend" }
@@ -32,7 +25,6 @@ terraform-format = { cmd = "terraform fmt", cwd = "terraform" }
 awscli = ">=2.15.36,<2.16"
 git = ">=2.44.0,<2.45"
 nodejs = ">=20.9.0,<20.10"
-openjdk = ">=21.0.2,<21.1"
 pre-commit = ">=3.7.0,<3.8"
 python = ">=3.11.0,<3.13"
 terraform = ">=1.7.5,<1.8"
@@ -40,15 +32,4 @@ terraform = ">=1.7.5,<1.8"
 [pypi-dependencies]
 boto3 = "*"
 click = "*"
-colorlog = "*"
-django = "*"
-django-allauth = "*"
-django-cors-headers = "*"
-django-environ = "*"
-django-ninja = "*"
-psycopg2-binary = "*"
-python-dotenv = "*"
 ruff = "*"
-uvicorn = "*"
-requests = ">=2.32.4, <3"
-pyjwt = ">=2.10.1, <3"
