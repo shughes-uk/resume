@@ -1,13 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="500" height="500">
-  <style>
-    .pancake1 { fill: #EEDBC2;   }
-    .pancake2 { fill: #42BBEC;  }
-    .pancake3 { fill: #E0C35C; }
-    .pancake4 { fill: #9A3887; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="moon" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="35">
+      <stop offset="0" stop-color="#f3e6ff" />
+      <stop offset="1" stop-color="#d8acff" />
+    </linearGradient>
+    <clipPath id="tile">
+      <rect width="64" height="64" rx="14" />
+    </clipPath>
+  </defs>
 
-  <rect class="pancake1" x="20" y="20" width="60" height="12" rx="2" ry="2" />
-  <rect class="pancake2" x="25" y="36" width="50" height="12" rx="2" ry="2" />
-  <rect class="pancake3" x="30" y="52" width="40" height="12" rx="2" ry="2" />
-  <rect class="pancake4" x="35" y="68" width="30" height="12" rx="2" ry="2" />
+  <rect width="64" height="64" rx="14" fill="#1a102c" />
+  <path d="M16 35A16 16 0 0 1 48 35Z" fill="url(#moon)" />
+  <g clip-path="url(#tile)">
+    <rect y="37" width="64" height="6" fill="#b48ae0" />
+    <rect y="46" width="64" height="6" fill="#7d63c4" />
+    <rect y="55" width="64" height="6" fill="#4f55a3" />
+  </g>
+  <path d="M51 8Q51.8 13.2 57 14Q51.8 14.8 51 20Q50.2 14.8 45 14Q50.2 13.2 51 8Z" fill="#ffeb68" />
 </svg>
