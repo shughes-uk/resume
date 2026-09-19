@@ -8,29 +8,21 @@
     "build": "tsc && vite build",
     "format": "prettier --write .",
     "lint": "eslint . --ext ts,tsx --max-warnings 0 && tsc --noEmit",
-    "preview": "vite preview",
-    "autogen-client": "python ../backend/manage.py export_openapi_schema --output spec.json && prettier spec.json --write && rm -rf ./src/api-client && openapi-generator-cli generate"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@datadog/browser-rum": "^5.16.0",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
-    "@fontsource/roboto": "^5.0.12",
     "@mui/icons-material": "^6.0.0-alpha.1",
     "@mui/material": "^6.0.0-alpha.1",
-    "@react-oauth/google": "^0.12.1",
-    "@types/js-cookie": "^3.0.6",
-    "js-cookie": "^3.0.5",
     "notistack": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-query": "^3.39.3",
-    "react-router-dom": "^6.22.3",
     "suncalc": "^1.9.0",
     "usehooks-ts": "^3.1.0"
   },
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.13.1",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/suncalc": "^1.9.2",

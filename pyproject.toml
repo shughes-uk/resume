@@ -2,5 +2,4 @@
 target-version = "py312"
 
 [tool.ruff.lint]
-ignore-init-module-imports = true
 select = ["B", "E", "F"]

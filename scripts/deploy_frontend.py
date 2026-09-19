@@ -64,21 +64,12 @@ def create_cloudfront_invalidation(distribution_id: str):
 @click.command()
 def deploy_frontend():
     click.echo("Deploying frontend")
-    # check frontend is built
-    for subdir, path in [
-        (Path("./"), Path("frontend/dist")),
-        (Path("static"), Path("backend/staticfiles")),
-    ]:
-        if not path.exists():
-            click.echo(
-                f"{path} is not built."
-                " Run `pixi run frontend-build` "
-                "or `pixi run backend-collect-statics`"
-            )
-            sys.exit(1)
-        target_bucket = get_ssm_parameter("/resume/s3/bucket")
-        # upload to s3
-        upload_directory_to_s3(target_bucket, path, subdir)
+    path = Path("frontend/dist")
+    if not path.exists():
+        click.echo(f"{path} is not built. Run `pixi run frontend-build`")
+        sys.exit(1)
+    target_bucket = get_ssm_parameter("/resume/s3/bucket")
+    upload_directory_to_s3(target_bucket, path)
     # reset cloudfront distribution
     cloudfront_distribution_id = get_ssm_parameter("/resume/cdn/distribution_id")
     create_cloudfront_invalidation(cloudfront_distribution_id)
