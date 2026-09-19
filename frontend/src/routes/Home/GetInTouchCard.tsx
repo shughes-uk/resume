@@ -32,7 +32,6 @@ export const GetInTouchCard = (): React.ReactElement => {
           <Divider />
           <ContactDetails />
           <Button
-            size="small"
             variant="outlined"
             ref={setDownloadMenuAnchor}
             onClick={() => setIsDownloadMenuOpen(true)}
@@ -80,7 +79,6 @@ export const GetInTouchCard = (): React.ReactElement => {
           </Menu>
           <Button
             component={Link}
-            size="small"
             variant="contained"
             href="https://calendly.com/shughes-uk/60-min-chat"
             target="_blank"
