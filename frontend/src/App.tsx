@@ -9,11 +9,12 @@ const App = (): React.ReactElement => {
     useLocalStorage<boolean>("hasSeenSourceTooltip", false);
   useEffect(() => {
     if (!hasSeenSourceTooltip) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setHasSeenSourceTooltip(true);
       }, 5000);
+      return () => clearTimeout(timeoutId);
     }
-  });
+  }, [hasSeenSourceTooltip, setHasSeenSourceTooltip]);
   return (
     <>
       <HomeView />

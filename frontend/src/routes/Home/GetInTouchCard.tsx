@@ -12,12 +12,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ContactDetails } from "../../components/contact";
 
 export const GetInTouchCard = (): React.ReactElement => {
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
-  const downloadMenuAnchorRef = useRef(null);
+  const [downloadMenuAnchor, setDownloadMenuAnchor] =
+    useState<HTMLButtonElement | null>(null);
   return (
     <Card elevation={10}>
       <CardContent>
@@ -33,7 +34,7 @@ export const GetInTouchCard = (): React.ReactElement => {
           <Button
             size="small"
             variant="outlined"
-            ref={downloadMenuAnchorRef}
+            ref={setDownloadMenuAnchor}
             onClick={() => setIsDownloadMenuOpen(true)}
           >
             Download Resume
@@ -49,7 +50,7 @@ export const GetInTouchCard = (): React.ReactElement => {
               vertical: "top",
               horizontal: "left",
             }}
-            anchorEl={downloadMenuAnchorRef.current}
+            anchorEl={downloadMenuAnchor}
             keepMounted
           >
             <MenuItem

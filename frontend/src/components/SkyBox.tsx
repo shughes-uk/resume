@@ -1,6 +1,6 @@
 import { Box, Paper } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import { getTimes, GetTimesResult } from "suncalc";
+import { getTimes } from "suncalc";
 
 const SunGradientColors = {
   sunrise: {
@@ -50,17 +50,31 @@ const getCelestialXY = (
   };
 };
 
-const useCelestialPositions = (time: Date, width: number, height: number) => {
+const HOUR_MS = 60 * 60 * 1000;
+
+const getCelestialPositions = (time: Date, width: number, height: number) => {
   const latitude = 0;
   const longitude = time.getTimezoneOffset() / 4;
   const sunTimes = getTimes(time, latitude, longitude);
+  // suncalc 2 returns null for events that don't happen on a given day. At the
+  // equator the sun always rises and sets, but fall back to solar noon +/- 6h
+  // to keep the types honest.
+  const sunrise =
+    sunTimes.sunrise ?? new Date(sunTimes.solarNoon.getTime() - 6 * HOUR_MS);
+  const sunset =
+    sunTimes.sunset ?? new Date(sunTimes.solarNoon.getTime() + 6 * HOUR_MS);
   const { x: sunX, y: sunY } = getCelestialXY(
     time,
     width,
     height,
-    sunTimes.sunset,
-    sunTimes.sunrise,
+    sunset,
+    sunrise,
   );
+  const peakTimes = {
+    sunrise,
+    solarNoon: sunTimes.solarNoon,
+    sunset,
+  } satisfies Record<keyof typeof SunGradientColors, Date>;
 
   const sunRadialGradients = Object.entries(SunGradientColors).map(
     ([key, gradient]) => {
@@ -69,10 +83,11 @@ const useCelestialPositions = (time: Date, width: number, height: number) => {
           return `${color} ${stop}`;
         })
         .join(", ");
-      const peakTime = sunTimes[key as keyof GetTimesResult];
+      const peakTime = peakTimes[key as keyof typeof peakTimes];
       const diff = Math.abs(time.getTime() - peakTime.getTime()) / 1000 / 60; // Difference in minutes
       const opacity = Math.max(0, 1 - Math.pow(diff / 360, 1));
       return {
+        name: key,
         gradient: `radial-gradient(circle at ${sunX}px ${sunY}px, ${gradientColors})`,
         opacity: opacity,
       };
@@ -90,7 +105,7 @@ type SkyBoxProps = {
 };
 
 const useDateTime = (timeMultiplier = 1) => {
-  const [dateTime, setDateTime] = useState(new Date());
+  const [dateTime, setDateTime] = useState(() => new Date());
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -116,6 +131,7 @@ const createStars = (count: number, width: number, height: number) => {
     const y = Math.random() * height;
     const size = 2;
     stars.push({
+      id: i,
       x,
       y,
       size,
@@ -126,7 +142,7 @@ const createStars = (count: number, width: number, height: number) => {
 export const SkyBox = ({ children }: SkyBoxProps) => {
   const [paperRef, setPaperRef] = useState<HTMLDivElement | null>(null);
   const now = useDateTime(1500);
-  const sun = useCelestialPositions(
+  const sun = getCelestialPositions(
     now,
     paperRef?.clientWidth || 0,
     paperRef?.clientHeight || 0,
@@ -155,9 +171,9 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
         backgroundColor: "transparent",
       }}
     >
-      {sun.gradient.map((gradient, i) => (
+      {sun.gradient.map((gradient) => (
         <Box
-          key={i}
+          key={gradient.name}
           sx={{
             position: "absolute",
             top: 0,
@@ -167,7 +183,7 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
             backgroundImage: gradient.gradient,
             backgroundRepeat: "no-repeat",
             filter: "blur(1px)",
-            opacity: sun.gradient[i].opacity,
+            opacity: gradient.opacity,
             zIndex: -1,
           }}
         ></Box>
@@ -203,9 +219,9 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           opacity: nightSkyOpacity,
         }}
       >
-        {stars.map((star, i) => (
+        {stars.map((star) => (
           <Box
-            key={i}
+            key={star.id}
             sx={{
               position: "absolute",
               top: star.y,
