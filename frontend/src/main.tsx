@@ -10,8 +10,8 @@ initAnalytics();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <CssBaseline />
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       <SnackbarProvider>
         <App />
       </SnackbarProvider>

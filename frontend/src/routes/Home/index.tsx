@@ -9,6 +9,8 @@ export const HomeView = (): React.ReactElement => {
         container
         sx={{
           paddingTop: { xs: "50px", sm: "120px" },
+          // Landscape phones are wide enough for `sm` but too short for it
+          "@media (max-height: 500px)": { paddingTop: "8px" },
           margin: 0,
           justifyContent: "center",
           alignItems: "center",

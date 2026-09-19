@@ -43,14 +43,14 @@ export const ContactDetails = (): React.ReactElement => {
         <ListItemIcon>
           <Stack
             direction="row"
-            spacing={1}
-            sx={{ alignItems: "center", justifyContent: "center" }}
+            sx={{ alignItems: "center", justifyContent: "center", ml: -1 }}
           >
             <Link
               href="https://www.linkedin.com/in/samantha-hughes-2b8b7716"
               target="_blank"
               rel="noreferrer"
-              sx={{ display: "flex", alignItems: "center" }}
+              aria-label="LinkedIn"
+              sx={{ display: "flex", alignItems: "center", p: 1 }}
             >
               <LinkedIn color="action" />
             </Link>
@@ -58,7 +58,8 @@ export const ContactDetails = (): React.ReactElement => {
               href="https://github.com/shughes-uk"
               target="_blank"
               rel="noreferrer"
-              sx={{ display: "flex", alignItems: "center" }}
+              aria-label="GitHub"
+              sx={{ display: "flex", alignItems: "center", p: 1 }}
             >
               <GitHub color="action" />
             </Link>

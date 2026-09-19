@@ -1,5 +1,5 @@
 import { GitHub } from "@mui/icons-material";
-import { Link, Tooltip } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
 import { useLocalStorage } from "usehooks-ts";
 import React, { useEffect } from "react";
 import { HomeView } from "./routes/Home";
@@ -18,23 +18,25 @@ const App = (): React.ReactElement => {
   return (
     <>
       <HomeView />
-      <Link component={Link} href="https://github.com/shughes-uk/resume">
-        <Tooltip
-          open={hasSeenSourceTooltip ? undefined : true}
-          title="Explore this project on GitHub!"
-          arrow
+      <Tooltip
+        open={hasSeenSourceTooltip ? undefined : true}
+        title="Explore this project on GitHub!"
+        arrow
+      >
+        <IconButton
+          component="a"
+          href="https://github.com/shughes-uk/resume"
+          aria-label="Explore this project on GitHub"
+          sx={{
+            position: "fixed",
+            bottom: "12px",
+            right: "12px",
+            zIndex: 9999,
+          }}
         >
-          <GitHub
-            color="action"
-            sx={{
-              position: "fixed",
-              bottom: "20px",
-              right: "20px",
-              zIndex: 9999,
-            }}
-          />
-        </Tooltip>
-      </Link>
+          <GitHub color="action" />
+        </IconButton>
+      </Tooltip>
     </>
   );
 };
