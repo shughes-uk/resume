@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "github_deploy_frontend" {
     resources = ["${module.resume_s3_bucket.s3_bucket_arn}/*"]
   }
   statement {
-    actions   = ["cloudfront:CreateInvalidation"]
+    actions   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
     resources = [module.resume_cdn.cloudfront_distribution_arn]
   }
   statement {
@@ -105,16 +105,6 @@ data "aws_iam_policy_document" "github_terraform_plan" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["arn:aws:s3:::shughes-resume-tfstate/resume/*"]
-  }
-  # Refreshing the Django secret needs its value, and the random password data
-  # source is read on every plan. Remove both with the backend resources.
-  statement {
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.django_secret_key.arn]
-  }
-  statement {
-    actions   = ["secretsmanager:GetRandomPassword"]
-    resources = ["*"]
   }
 }
 
