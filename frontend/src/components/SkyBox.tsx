@@ -220,6 +220,15 @@ const StarField = memo(function StarField() {
   );
 });
 
+// White text over the raw sky measures as low as 1.15:1 at solar noon, when
+// the sun's near-white core passes directly behind the hero text. Multiplying
+// the sky by a saturated blue deepens it overhead and clears toward the
+// horizon, which is how a real sky looks anyway. Multiply keeps the colour
+// vivid where a dark overlay would turn it grey, and it leaves the night sky
+// alone because that is already darker than the layer.
+const OVERHEAD_DEPTH =
+  "linear-gradient(to bottom, rgb(52,92,190) 0%, rgb(66,108,200) 55%, rgb(150,180,228) 72%, rgb(255,255,255) 88%)";
+
 const skyLayerStyles = {
   position: "absolute",
   inset: 0,
@@ -265,6 +274,15 @@ export const SkyBox = ({ children }: SkyBoxProps) => {
           }}
         />
       ))}
+      <Box
+        id="skyDepth"
+        sx={{
+          ...skyLayerStyles,
+          backgroundImage: OVERHEAD_DEPTH,
+          mixBlendMode: "multiply",
+          zIndex: -1,
+        }}
+      />
       <Box
         id="daySky"
         sx={{
