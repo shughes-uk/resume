@@ -16,6 +16,8 @@ Everything runs through pixi; there is no system `terraform`, `node` or `npm`.
 - **Terraform**: state is in S3 with native locking. Plans run in CI on PRs; applies are local. Use `-target` when config and live infrastructure disagree — an untargeted apply once rebuilt the deleted backend.
 - **README.md** is the owner's: only remove stale content or fix something factually wrong. Explain changes in the PR instead.
 - **Lint** is oxlint. TypeScript 7 provides `tsc`.
+- **Dev servers**: the port is derived from the checkout path, so every worktree has its own. Use only the URL your own `frontend-dev` or `frontend-preview` prints — never assume 5173. If the port is taken, your server is already running; don't kill servers you didn't start.
+- **Worktrees**: background sessions work in `.claude/worktrees/`. A fresh one has no dependencies, so run `pixi run setup` first.
 
 ## Deploy (`scripts/deploy_frontend.py`)
 
