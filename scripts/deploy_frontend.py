@@ -24,12 +24,19 @@ def get_ssm_parameter(name: str) -> str:
     return response["Parameter"]["Value"]
 
 
-def upload_files(s3, bucket: str, files: list[Path]) -> None:
+def object_key(prefix: str, file: Path) -> str:
+    relative = file.relative_to(DIST).as_posix()
+    return f"{prefix}/{relative}" if prefix else relative
+
+
+def upload_files(s3, bucket: str, prefix: str, files: list[Path]) -> None:
     def upload(file: Path) -> None:
-        key = file.relative_to(DIST).as_posix()
+        key = object_key(prefix, file)
         content_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
         cache_control = (
-            IMMUTABLE_CACHE if key.startswith("assets/") else REVALIDATE_CACHE
+            IMMUTABLE_CACHE
+            if file.relative_to(DIST).parts[0] == "assets"
+            else REVALIDATE_CACHE
         )
         s3.upload_file(
             Filename=str(file),
@@ -63,9 +70,12 @@ def invalidate_cloudfront(distribution_id: str) -> None:
     )
 
 
-def delete_stale_objects(s3, bucket: str, keep: set[str]) -> None:
+def delete_stale_objects(s3, bucket: str, prefix: str, keep: set[str]) -> None:
+    # Only ever look inside our own prefix, so a preview can't delete another PR's files
+    list_prefix = f"{prefix}/" if prefix else ""
     stale = []
-    for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=list_prefix):
         stale += [
             obj["Key"] for obj in page.get("Contents", []) if obj["Key"] not in keep
         ]
@@ -100,13 +110,22 @@ def smoke_test(site_url: str) -> None:
 
 @click.command()
 @click.option("--site-url", default="https://samanthahughes.me", show_default=True)
-def deploy_frontend(site_url: str) -> None:
+@click.option("--bucket", help="Target bucket. Defaults to the production bucket.")
+@click.option("--prefix", default="", help="Deploy under this key prefix, e.g. pr-12.")
+@click.option(
+    "--invalidate/--no-invalidate",
+    default=True,
+    show_default=True,
+    help="Invalidate the production CloudFront distribution after uploading.",
+)
+def deploy_frontend(
+    site_url: str, bucket: str | None, prefix: str, invalidate: bool
+) -> None:
     click.echo("Deploying frontend")
     if not (DIST / "index.html").exists():
         click.echo(f"{DIST} is not built. Run `pixi run frontend-build`")
         sys.exit(1)
-    bucket = get_ssm_parameter("/resume/s3/bucket")
-    distribution_id = get_ssm_parameter("/resume/cdn/distribution_id")
+    bucket = bucket or get_ssm_parameter("/resume/s3/bucket")
     s3 = boto3.client("s3")
 
     files = sorted(file for file in DIST.rglob("*") if file.is_file())
@@ -115,13 +134,14 @@ def deploy_frontend(site_url: str) -> None:
     others = [file for file in files if file not in assets and file != index]
     # Upload in dependency order so a visitor never gets an index.html that
     # references assets which are not in the bucket yet
-    upload_files(s3, bucket, assets)
-    upload_files(s3, bucket, others)
-    upload_files(s3, bucket, [index])
+    upload_files(s3, bucket, prefix, assets)
+    upload_files(s3, bucket, prefix, others)
+    upload_files(s3, bucket, prefix, [index])
 
-    invalidate_cloudfront(distribution_id)
+    if invalidate:
+        invalidate_cloudfront(get_ssm_parameter("/resume/cdn/distribution_id"))
     # Only delete old files once no edge can still serve an index.html that uses them
-    delete_stale_objects(s3, bucket, {f.relative_to(DIST).as_posix() for f in files})
+    delete_stale_objects(s3, bucket, prefix, {object_key(prefix, f) for f in files})
     smoke_test(site_url)
     click.echo("Deployment complete")
 
