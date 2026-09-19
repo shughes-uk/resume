@@ -1,6 +1,6 @@
 module "resume_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.1.2"
+  version = "5.16.1"
 
   bucket        = "shughes-resume-frontend-bucket"
   force_destroy = true

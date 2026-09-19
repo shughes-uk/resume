@@ -51,8 +51,7 @@ export const ContactDetails = (): React.ReactElement => {
           <Stack
             direction="row"
             spacing={1}
-            alignItems={"center"}
-            justifyContent={"center"}
+            sx={{ alignItems: "center", justifyContent: "center" }}
           >
             <Link
               href="https://www.linkedin.com/in/samantha-hughes-2b8b7716"

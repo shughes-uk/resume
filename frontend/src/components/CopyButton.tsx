@@ -25,7 +25,7 @@ export const CopyButton = ({ text }: { text: string }): ReactElement => {
   };
   const IconToUse = recentlyCopied ? LibraryAddCheck : ContentCopyRounded;
   return (
-    <Stack alignItems="center">
+    <Stack sx={{ alignItems: "center" }}>
       <IconToUse
         fontSize="small"
         onClick={copyToClipboard}

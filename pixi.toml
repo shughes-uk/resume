@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["shughes.uk <shughes.uk@gmail.com>"]
 channels = ["conda-forge"]
 description = "Add a short description here"
@@ -29,14 +29,14 @@ terraform-plan = { cmd = "terraform plan -input=false", cwd = "terraform", depen
 ] }
 
 [dependencies]
-awscli = ">=2.15.36,<2.16"
-git = ">=2.44.0,<2.45"
-nodejs = ">=20.9.0,<20.10"
-pre-commit = ">=3.7.0,<3.8"
-python = ">=3.11.0,<3.13"
-terraform = ">=1.16.1,<1.17"
+awscli = ">=2.36.42,<3"
+git = ">=2.55.0,<3"
+nodejs = ">=26.8.2,<26.9"
+pre-commit = ">=4.6.2,<5"
+python = ">=3.14.7,<3.15"
+terraform = ">=1.16.1,<2"
 
 [pypi-dependencies]
-boto3 = "*"
-click = "*"
-ruff = "*"
+boto3 = ">=1.43.98, <2"
+click = ">=8.5.0, <9"
+ruff = ">=0.16.8, <0.17"

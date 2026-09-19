@@ -1,18 +1,21 @@
-import { Grid2, Stack, Typography } from "@mui/material";
+import { Grid, Stack, Typography } from "@mui/material";
 import { GetInTouchCard } from "./GetInTouchCard";
 import { SkyBox } from "../../components/SkyBox";
 
 export const HomeView = (): React.ReactElement => {
   return (
     <SkyBox>
-      <Grid2
+      <Grid
         container
-        sx={{ paddingTop: { xs: "50px", sm: "120px" }, margin: 0 }}
+        sx={{
+          paddingTop: { xs: "50px", sm: "120px" },
+          margin: 0,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
         spacing={2}
-        justifyContent={"center"}
-        alignItems={"center"}
       >
-        <Grid2 size={{ md: 6 }} sx={{ minWidth: "fit-content" }}>
+        <Grid size={{ md: 6 }} sx={{ minWidth: "fit-content" }}>
           <Typography
             variant={"h1"}
             sx={{
@@ -37,8 +40,8 @@ export const HomeView = (): React.ReactElement => {
           >
             Full Stack Engineer
           </Typography>
-        </Grid2>
-        <Grid2
+        </Grid>
+        <Grid
           size={{ md: 4 }}
           offset={{ sm: 0, md: 1 }}
           sx={{
@@ -49,8 +52,8 @@ export const HomeView = (): React.ReactElement => {
           <Stack spacing={2}>
             <GetInTouchCard />
           </Stack>
-        </Grid2>
-      </Grid2>
+        </Grid>
+      </Grid>
     </SkyBox>
   );
 };
