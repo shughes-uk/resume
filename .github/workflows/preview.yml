@@ -10,7 +10,7 @@ concurrency:
 jobs:
   deploy-preview:
     # Fork PRs don't get an OIDC token, so only preview branches from this repo
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
     environment:
       name: preview
       url: https://pr-${{ github.event.pull_request.number }}.preview.samanthahughes.me

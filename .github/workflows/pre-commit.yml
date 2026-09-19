@@ -19,3 +19,10 @@ jobs:
         working-directory: frontend
         run: pixi run npm ci
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+      # The production build and terraform validate need no credentials, so they run
+      # here rather than in the preview job: Dependabot PRs get no secrets or OIDC
+      # token, and automerge gates on this workflow.
+      - name: Build frontend
+        run: pixi run frontend-build
+      - name: Validate terraform
+        run: pixi run terraform-validate

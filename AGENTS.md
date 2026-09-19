@@ -8,8 +8,8 @@ Everything runs through pixi; there is no system `terraform`, `node` or `npm`.
 
 - `pixi run frontend-dev` / `frontend-build` / `frontend-lint` / `frontend-format`
 - `pixi run terraform-plan` / `terraform-apply` (Terraform 1.16, pinned)
-- `cd frontend && pixi run npm ci` for deps
-- After cloning or a Python bump: `pixi run pre-commit install`, or commits fail with "`pre-commit` not found"
+- `pixi run checks` runs every pre-commit hook; `pixi run frontend-preview` serves the built site
+- After cloning or a Python bump: `pixi run setup` (deps + git hook), or commits fail with "`pre-commit` not found"
 
 ## Rules
 

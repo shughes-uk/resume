@@ -16,6 +16,9 @@ frontend-deploy = { cmd = "python scripts/deploy_frontend.py", cwd = ".", depend
 frontend-dev = { cmd = "npm run dev", cwd = "frontend" }
 frontend-format = { cmd = "npm run format", cwd = "frontend" }
 frontend-install = { cmd = "npm install", cwd = "frontend" }
+frontend-preview = { cmd = "npm run preview", cwd = "frontend", description = "Serve the production build locally", depends-on = [
+    "frontend-build",
+] }
 frontend-lint = { cmd = "npm run lint", cwd = "frontend", depends-on = [
     "frontend-install",
 ] }
@@ -26,6 +29,11 @@ terraform-format = { cmd = "terraform fmt", cwd = "terraform" }
 terraform-init = { cmd = "terraform init -input=false", cwd = "terraform" }
 terraform-plan = { cmd = "terraform plan -input=false", cwd = "terraform", depends-on = [
     "terraform-init",
+] }
+terraform-validate = { cmd = "terraform init -backend=false -input=false && terraform validate", cwd = "terraform", description = "Check the terraform config without touching remote state", env = { TF_DATA_DIR = ".terraform-validate" } }
+checks = { cmd = "pre-commit run --all-files", description = "Run every pre-commit hook over the repo" }
+setup = { cmd = "pre-commit install", description = "Install dependencies and the git hook", depends-on = [
+    "frontend-install",
 ] }
 
 [dependencies]
