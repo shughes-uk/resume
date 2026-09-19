@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "github_deploy_frontend" {
     resources = ["${module.resume_s3_bucket.s3_bucket_arn}/*"]
   }
   statement {
-    actions   = ["cloudfront:CreateInvalidation"]
+    actions   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
     resources = [module.resume_cdn.cloudfront_distribution_arn]
   }
   statement {
