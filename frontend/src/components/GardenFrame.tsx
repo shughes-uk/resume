@@ -129,9 +129,8 @@ export const GardenFrame = ({
       created.grow(prefersReducedMotion ? FULLY_GROWN_TICKS : age);
 
       let lastPetals: PixelBox | null = null;
-      let lastWisps: PixelBox | null = null;
       draw = () => {
-        const { petals, wisps } = created.render();
+        const petals = created.render();
         // Only the band of border along the bottom and the strip of jasmine
         // up the right side ever change, so only those are uploaded.
         const { bandTop, stripLeft } = created;
@@ -153,21 +152,6 @@ export const GardenFrame = ({
           cols - stripLeft,
           bandTop,
         );
-        // Wisps drift anywhere behind the page, so the box around them, and
-        // around where they were last frame, is uploaded as well.
-        const wispy = union(wisps, lastWisps);
-        if (wispy) {
-          back.context?.putImageData(
-            back.image,
-            0,
-            0,
-            wispy.x,
-            wispy.y,
-            wispy.width,
-            wispy.height,
-          );
-        }
-        lastWisps = wisps;
         const dirty = union(petals, lastPetals);
         if (dirty) {
           front.context?.putImageData(
