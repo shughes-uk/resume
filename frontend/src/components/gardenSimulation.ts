@@ -28,8 +28,11 @@ export type Garden = {
   grow: (ticks: number) => void;
   /** Advance wind, stems and petals by `dt` seconds. */
   step: (dt: number) => void;
-  /** Repaint both buffers. Returns the box of `front` that holds anything. */
-  render: () => Box | null;
+  /**
+   * Repaint both buffers. Returns the box of `front` that holds petals, and the
+   * box of `back` that holds wind wisps, which can be anywhere.
+   */
+  render: () => { petals: Box | null; wisps: Box | null };
   /** The pointer moved to (x, y), in cells, at `time` milliseconds. Its motion steers the wind. */
   pointerMove: (x: number, y: number, time: number) => void;
   pointerLeave: () => void;
@@ -165,6 +168,16 @@ const PETAL_RATE = 0.6;
 const MAX_PETALS = 4;
 const MAX_FALLEN = 36;
 
+// Wisps are short streaks that ride the wind and curl up as they fade, so a
+// gust can be seen coming. They only appear in wind at least this strong.
+const WISP_THRESHOLD = 0.75;
+const WISP_RATE = 1.6;
+const MAX_WISPS = 7;
+// Cells a second of travel for each unit of wind.
+const WISP_SPEED = 26;
+// 0xe6dcff, a pale lilac, as little-endian ABGR without its alpha.
+const WISP_COLOR = 0xffdce6;
+
 const mulberry32 = (seed: number) => {
   let state = seed >>> 0;
   return () => {
@@ -237,6 +250,20 @@ type Bloom = {
   petals: [number, number];
 };
 
+type Wisp = {
+  x: number;
+  y: number;
+  age: number;
+  life: number;
+  // The streak it leaves behind, newest first, as x and y pairs.
+  trail: number[];
+  length: number;
+  phase: number;
+  // Which way it curls at the end of its life.
+  curl: number;
+  heading: number;
+};
+
 type Petal = {
   x: number;
   y: number;
@@ -276,6 +303,7 @@ export const createGarden = (options: GardenOptions): Garden => {
   const plants: Plant[] = [];
   const blooms: Bloom[] = [];
   let petals: Petal[] = [];
+  let wisps: Wisp[] = [];
   const fallen: { x: number; y: number; color: number }[] = [];
   let tick = 0;
   let time = 0;
@@ -703,6 +731,48 @@ export const createGarden = (options: GardenOptions): Garden => {
       return;
     }
 
+    // Wisps appear where the wind is strong: anywhere in a gust, and around
+    // the pointer while it is steering.
+    if (wisps.length < MAX_WISPS) {
+      const nearPointer = Math.abs(steered) > 0.5 && Math.random() < 0.6;
+      const x = nearPointer
+        ? pointer.x + (Math.random() - 0.5) * 60
+        : Math.random() * cols;
+      const y = nearPointer
+        ? pointer.y + (Math.random() - 0.5) * 30
+        : rows * (0.15 + 0.78 * Math.random());
+      const strength = Math.abs(wind(x)) - WISP_THRESHOLD;
+      if (strength > 0 && Math.random() < dt * WISP_RATE * (1 + 3 * strength)) {
+        wisps.push({
+          x,
+          y: Math.max(2, Math.min(rows - 6, y)),
+          age: 0,
+          life: 0.9 + Math.random() * 0.9,
+          trail: [],
+          length: 9 + Math.floor(Math.random() * 10),
+          phase: Math.random() * 6,
+          curl: Math.random() < 0.5 ? 1 : -1,
+          heading: 0,
+        });
+      }
+    }
+    for (const wisp of wisps) {
+      wisp.age += dt;
+      const speed = wind(wisp.x) * WISP_SPEED;
+      // It runs straight with a slight waver, then winds into a curl and slows
+      // over the last third of its life.
+      const late = Math.max(0, (wisp.age / wisp.life - 0.65) / 0.35);
+      wisp.heading += wisp.curl * late * 9 * dt;
+      const waver = 0.25 * Math.sin(wisp.phase + wisp.age * 7);
+      const pace = Math.abs(speed) * (1 - 0.6 * late);
+      const direction = speed >= 0 ? -1 : 1;
+      wisp.x += direction * Math.cos(wisp.heading + waver) * pace * dt;
+      wisp.y -= Math.sin(wisp.heading + waver) * pace * dt;
+      wisp.trail.unshift(wisp.x, wisp.y);
+      wisp.trail.length = Math.min(wisp.trail.length, wisp.length * 2);
+    }
+    wisps = wisps.filter((wisp) => wisp.age < wisp.life);
+
     // Petals are plucked more readily in a gust, from whichever of a few
     // candidates stands in the strongest wind.
     if (blooms.length > 0 && petals.length < MAX_PETALS) {
@@ -765,9 +835,72 @@ export const createGarden = (options: GardenOptions): Garden => {
     }
   };
 
+  // The smallest box on the grid around a list of x and y pairs.
+  const boxOf = (points: number[]): Box | null => {
+    let left = cols;
+    let top = rows;
+    let right = -1;
+    let bottom = -1;
+    for (let i = 0; i < points.length; i += 2) {
+      left = Math.min(left, Math.floor(points[i]));
+      top = Math.min(top, Math.floor(points[i + 1]));
+      right = Math.max(right, Math.floor(points[i]));
+      bottom = Math.max(bottom, Math.floor(points[i + 1]));
+    }
+    left = Math.max(0, left);
+    top = Math.max(0, top);
+    right = Math.min(cols - 1, right);
+    bottom = Math.min(rows - 1, bottom);
+    if (right < left || bottom < top) {
+      return null;
+    }
+    return {
+      x: left,
+      y: top,
+      width: right - left + 1,
+      height: bottom - top + 1,
+    };
+  };
+
   const render = () => {
     back.set(climberLayer);
     front.fill(0);
+    const wispBox = boxOf(
+      wisps.flatMap((wisp) => {
+        // Fades in, fades out, and thins towards the tail.
+        const presence = Math.min(1, wisp.age * 6, (wisp.life - wisp.age) * 3);
+        for (let i = 0; i + 3 < wisp.trail.length; i += 2) {
+          const alpha = Math.round(
+            190 * presence * (1 - i / (wisp.length * 2)),
+          );
+          if (alpha <= 0) {
+            continue;
+          }
+          // A wisp can cover more than a pixel a frame, so each pair of
+          // trail points is joined up rather than left as dots.
+          const [x0, y0, x1, y1] = wisp.trail.slice(i, i + 4);
+          const steps = Math.max(
+            1,
+            Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))),
+          );
+          for (let k = 0; k < steps; k++) {
+            const px = Math.floor(x0 + ((x1 - x0) * k) / steps);
+            const py = Math.floor(y0 + ((y1 - y0) * k) / steps);
+            // Never over the jasmine, which is already in the buffer.
+            if (
+              px >= 0 &&
+              py >= 0 &&
+              px < cols &&
+              py < rows &&
+              back[py * cols + px] === 0
+            ) {
+              back[py * cols + px] = ((alpha << 24) | WISP_COLOR) >>> 0;
+            }
+          }
+        }
+        return wisp.trail;
+      }),
+    );
     for (const plant of plants) {
       if (plant.grown === 0) {
         continue;
@@ -860,13 +993,6 @@ export const createGarden = (options: GardenOptions): Garden => {
       put(back, petal.x, petal.y, petal.color);
     }
 
-    if (petals.length === 0) {
-      return null;
-    }
-    let left = cols;
-    let top = rows;
-    let right = 0;
-    let bottom = 0;
     for (const petal of petals) {
       // A petal tumbles, showing its pale underside every half turn.
       put(
@@ -875,23 +1001,10 @@ export const createGarden = (options: GardenOptions): Garden => {
         petal.y,
         petal.colors[Math.cos(petal.phase) > 0 ? 0 : 1],
       );
-      left = Math.min(left, Math.floor(petal.x));
-      top = Math.min(top, Math.floor(petal.y));
-      right = Math.max(right, Math.floor(petal.x));
-      bottom = Math.max(bottom, Math.floor(petal.y));
-    }
-    left = Math.max(0, left);
-    top = Math.max(0, top);
-    right = Math.min(cols - 1, right);
-    bottom = Math.min(rows - 1, bottom);
-    if (right < left || bottom < top) {
-      return null;
     }
     return {
-      x: left,
-      y: top,
-      width: right - left + 1,
-      height: bottom - top + 1,
+      petals: boxOf(petals.flatMap((petal) => [petal.x, petal.y])),
+      wisps: wispBox,
     };
   };
 
