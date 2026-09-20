@@ -1,12 +1,14 @@
 import { GitHub } from "@mui/icons-material";
 import { IconButton, Tooltip } from "@mui/material";
 import { useLocalStorage } from "usehooks-ts";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { GardenFrame } from "./components/GardenFrame";
 import { HomeView } from "./routes/Home";
 
 const App = (): React.ReactElement => {
   const [hasSeenSourceTooltip, setHasSeenSourceTooltip] =
     useLocalStorage<boolean>("hasSeenSourceTooltip", false);
+  const githubButton = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     if (!hasSeenSourceTooltip) {
       const timeoutId = setTimeout(() => {
@@ -17,7 +19,9 @@ const App = (): React.ReactElement => {
   }, [hasSeenSourceTooltip, setHasSeenSourceTooltip]);
   return (
     <>
-      <HomeView />
+      <GardenFrame button={githubButton}>
+        <HomeView />
+      </GardenFrame>
       <Tooltip
         open={hasSeenSourceTooltip ? undefined : true}
         title="Explore this project on GitHub!"
@@ -25,12 +29,14 @@ const App = (): React.ReactElement => {
       >
         <IconButton
           component="a"
+          ref={githubButton}
           href="https://github.com/shughes-uk/resume"
           aria-label="Explore this project on GitHub"
           sx={{
             position: "fixed",
             bottom: "12px",
-            right: "12px",
+            // Clear of the jasmine that climbs the right edge
+            right: "52px",
             zIndex: 9999,
           }}
         >
