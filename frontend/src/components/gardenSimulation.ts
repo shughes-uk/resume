@@ -30,7 +30,7 @@ export type Garden = {
   step: (dt: number) => void;
   /** Repaint both buffers. Returns the box of `front` that holds anything. */
   render: () => Box | null;
-  /** The pointer moved to (x, y), in cells, at `time` milliseconds. */
+  /** The pointer moved to (x, y), in cells, at `time` milliseconds. Its motion steers the wind. */
   pointerMove: (x: number, y: number, time: number) => void;
   pointerLeave: () => void;
   /** A puff of air outwards from the button. */
@@ -156,6 +156,11 @@ const BUTTON_CLEARING = 7;
 // through. Petals are a trickle: never more than MAX_PETALS in the air, and no
 // more than MAX_FALLEN lying in the grass.
 const Wind = { base: 0.3, gust: 1.55, turbulence: 0.4 };
+// How much wind a moving pointer steers: per cell a second of pointer speed, up
+// to a limit, spread over this many cells either side of it.
+const STEER_GAIN = 0.016;
+const STEER_LIMIT = 2.5;
+const STEER_WIDTH = 70;
 const PETAL_RATE = 0.6;
 const MAX_PETALS = 4;
 const MAX_FALLEN = 36;
@@ -275,6 +280,9 @@ export const createGarden = (options: GardenOptions): Garden => {
   let tick = 0;
   let time = 0;
   const pointer = { x: 0, y: 0, vx: 0, lastX: 0, lastTime: 0, active: false };
+  // The wind the pointer is steering: it builds as the pointer moves, wherever
+  // on the page that is, and dies away after it stops.
+  let steered = 0;
 
   const makePlant = (
     kind: Plant["kind"],
@@ -621,10 +629,14 @@ export const createGarden = (options: GardenOptions): Garden => {
       noise(x * 0.085 + time * 1.6, windSeed + 3) -
       0.5 +
       0.5 * (noise(x * 0.3 + time * 3.1, windSeed + 4) - 0.5);
+    // Steered wind is felt across the whole garden, most of all in the part
+    // of it below the pointer.
+    const below = Math.exp(-(((x - pointer.x) / STEER_WIDTH) ** 2));
     return (
       Wind.base * (0.8 + 0.4 * noise(time * 0.2, windSeed + 5)) +
       Wind.gust * front * lull +
-      Wind.turbulence * turbulence
+      Wind.turbulence * turbulence +
+      steered * (0.25 + 0.75 * below)
     );
   };
 
@@ -646,17 +658,18 @@ export const createGarden = (options: GardenOptions): Garden => {
   const step = (dt: number) => {
     time += dt;
     pointer.vx *= Math.pow(0.03, dt);
-    const pointerHeight = rows - pointer.y;
+    // Air has inertia: the steered wind picks up quickly behind a moving
+    // pointer and takes a moment to settle once it stops.
+    const pushed = pointer.active
+      ? Math.max(-STEER_LIMIT, Math.min(STEER_LIMIT, -pointer.vx * STEER_GAIN))
+      : 0;
+    const rate = Math.abs(pushed) > Math.abs(steered) ? 4 : 1.2;
+    steered += (pushed - steered) * Math.min(1, dt * rate);
     for (const plant of plants) {
       if (plant.grown === 0) {
         continue;
       }
-      let speed = wind(plant.x);
-      // A pointer moving through a plant drags the air along with it.
-      if (pointer.active && pointerHeight <= plant.grown + 4) {
-        const drag = Math.max(-3, Math.min(3, -pointer.vx * 0.035));
-        speed += drag * Math.exp(-(((plant.x - pointer.x) / 9) ** 2));
-      }
+      const speed = wind(plant.x);
       // A cantilever in a drag flow. Stiffness falls with height, so grass
       // flutters while tall stems swing slowly; tall stems are also thicker,
       // so they catch less wind for their stiffness and cannot fold as far.
