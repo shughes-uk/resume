@@ -35,7 +35,8 @@ const App = (): React.ReactElement => {
           sx={{
             position: "fixed",
             bottom: "12px",
-            // Clear of the jasmine that climbs the right edge
+            // Leaves room at the right edge for the jasmine drawn by
+            // GardenFrame
             right: "52px",
             zIndex: 9999,
           }}

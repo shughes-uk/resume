@@ -9,23 +9,26 @@ import {
 
 type GardenFrameProps = {
   children?: React.ReactNode;
-  /** The floating GitHub button, which the garden keeps clear of. */
+  /** The floating GitHub button. The garden leaves a clearing around it. */
   button: React.RefObject<HTMLElement | null>;
 };
 
-// One simulated pixel, in CSS pixels. Small screens get a finer grain so the
-// plants stay in proportion to the page.
+// Size of one garden pixel, in CSS pixels. Narrow screens use a smaller size so
+// the plants stay in proportion to the page.
 const getCellSize = (width: number) => (width < 600 ? 3 : 4);
-// The garden is redrawn at most this often. Pixels this coarse gain nothing
-// from a faster redraw.
+// Minimum time between redraws, which works out at about 30 a second. The art
+// is too coarse to look any smoother at a higher rate.
 const FRAME_INTERVAL_MS = 30;
-// requestAnimationFrame stops in a hidden tab. Capping the step means the
-// garden picks up where it left off instead of lurching forwards.
+// The most time a single frame may advance the simulation. Browsers pause
+// animation frames while a tab is hidden; without this cap the garden would
+// jump ahead when the tab is shown again.
 const MAX_FRAME_STEP_MS = 50;
-// Long enough for everything to have grown and opened, for visitors who have
-// asked for no motion and get the finished garden at once.
+// Ticks to grow straight away when the visitor prefers reduced motion. It is
+// enough for every plant to finish, so they get the finished garden with no
+// animation.
 const FULLY_GROWN_TICKS = 1500;
-// Above the GitHub button, so petals drift in front of everything.
+// The front canvas must be above the GitHub button (z-index 9999 in App.tsx) so
+// that petals pass in front of everything.
 const FRONT_Z_INDEX = 10000;
 
 const makeSurface = (canvas: HTMLCanvasElement, cols: number, rows: number) => {
@@ -60,7 +63,8 @@ export const GardenFrame = ({
   const layerRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLCanvasElement>(null);
   const frontRef = useRef<HTMLCanvasElement>(null);
-  // One garden per page load: resizes regrow this seed rather than a new one.
+  // Random seed for this page load. It is kept in state so that a resize
+  // regrows the same garden rather than a different one.
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 31));
   const prefersReducedMotion = useMediaQuery(
     "(prefers-reduced-motion: reduce)",
@@ -99,8 +103,9 @@ export const GardenFrame = ({
       cell = getCellSize(width);
       const cols = Math.ceil(width / cell);
       const rows = Math.ceil(height / cell);
-      // Whole cells only, anchored to the bottom right where the garden
-      // grows; any sliver of overhang is lost off the top and left.
+      // The canvases are a whole number of cells and are pinned to the bottom
+      // right, where the plants are. If the viewport is not an exact multiple
+      // of the cell size, the extra hangs off the top and left, out of sight.
       originX = width - cols * cell;
       originY = height - rows * cell;
       for (const canvas of [backCanvas, frontCanvas]) {
@@ -124,15 +129,16 @@ export const GardenFrame = ({
         },
       });
       garden = created;
-      // Resizing the canvases cleared them. Regrow the same garden on the new
-      // grid up to the age it had reached.
+      // Setting a canvas size clears it, so grow the new garden to the age the
+      // old one had reached. The seed is the same, so it looks the same.
       created.grow(prefersReducedMotion ? FULLY_GROWN_TICKS : age);
 
       let lastPetals: PixelBox | null = null;
       draw = () => {
         const petals = created.render();
-        // Only the band of border along the bottom and the strip of jasmine
-        // up the right side ever change, so only those are uploaded.
+        // Upload only the parts of the back canvas that can change: the band
+        // along the bottom where the border sways, and the strip up the right
+        // side where the jasmine grows.
         const { bandTop, stripLeft } = created;
         back.context?.putImageData(
           back.image,
@@ -152,6 +158,8 @@ export const GardenFrame = ({
           cols - stripLeft,
           bandTop,
         );
+        // On the front canvas, upload the area covering the petals now and
+        // where they were last frame, so their old positions are erased.
         const dirty = union(petals, lastPetals);
         if (dirty) {
           front.context?.putImageData(
@@ -200,8 +208,7 @@ export const GardenFrame = ({
       rebuild(width, height);
     });
     observer.observe(layer);
-    // The observer reports on the next rendering opportunity, which a
-    // background tab may not get for a while; build now so the garden exists.
+    // Build once now. The observer takes care of later size changes.
     rebuild(layer.clientWidth, layer.clientHeight);
 
     if (!prefersReducedMotion) {

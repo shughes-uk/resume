@@ -1,11 +1,15 @@
-// A pixel-art garden along the bottom and right edges of a grid: a flower
-// border that rises towards the corner and jasmine climbing the right side,
-// both keeping clear of the floating GitHub button.
+// Simulation for the pixel-art garden: a flower border along the bottom edge
+// that gets taller towards the right, and jasmine climbing the right edge. Both
+// leave a clearing around the floating GitHub button.
 //
-// The module knows nothing about canvases or clocks. The caller owns two pixel
-// buffers (behind and in front of the page), steps growth in ticks and wind in
-// seconds, and asks for a redraw. Growth is seeded and tick-based, so a resize
-// can rebuild the grid and fast-forward the same garden to the age it had.
+// This module never touches the screen and keeps no timers. The caller
+// (GardenFrame.tsx) supplies two pixel buffers, then calls grow() to advance
+// growth in ticks, step() to advance the wind in seconds, and render() to
+// repaint the buffers.
+//
+// All randomness in how the garden grows comes from the seed, so the same seed
+// and grid size always produce the same garden. GardenFrame relies on this to
+// rebuild the garden after a resize.
 
 export const TICKS_PER_SECOND = 12;
 
@@ -15,28 +19,49 @@ export type GardenOptions = {
   seed: number;
   /** Centre of the GitHub button, in cells. */
   button: { x: number; y: number };
-  /** No wind and no petals, for prefers-reduced-motion. */
+  /** Turn off wind and petals. Used for prefers-reduced-motion. */
   still: boolean;
-  /** Pixels behind the page, as little-endian ABGR. */
+  /**
+   * Pixel buffer shown behind the page content. One Uint32 per pixel, in the
+   * byte order ImageData expects (0xAABBGGRR).
+   */
   back: Uint32Array;
-  /** Pixels in front of the page and the button. */
+  /**
+   * Pixel buffer shown in front of the page content. Only petals are drawn
+   * here.
+   */
   front: Uint32Array;
 };
 
 export type Garden = {
-  /** Grow by whole ticks. */
+  /**
+   * Advance growth by this many ticks. There are TICKS_PER_SECOND in a second.
+   */
   grow: (ticks: number) => void;
-  /** Advance wind, stems and petals by `dt` seconds. */
+  /** Advance the wind, the swaying of plants and the petals by `dt` seconds. */
   step: (dt: number) => void;
-  /** Repaint both buffers. Returns the box of `front` that holds anything. */
+  /**
+   * Repaint both buffers. Returns the area of `front` that contains petals, or
+   * null if there are none, so the caller can upload just that area.
+   */
   render: () => Box | null;
-  /** The pointer moved to (x, y), in cells, at `time` milliseconds. Its motion steers the wind. */
+  /**
+   * Report the pointer position, in cells, and the event time in milliseconds.
+   * Moving the pointer pushes the wind in the direction it moves.
+   */
   pointerMove: (x: number, y: number, time: number) => void;
+  /** The pointer left the page, so stop pushing the wind. */
   pointerLeave: () => void;
-  /** A puff of air outwards from the button. */
+  /**
+   * Push nearby plants away from the GitHub button. Used when it is hovered.
+   */
   puff: () => void;
   age: () => number;
-  /** Everything in `back` that moves stays below this row or right of this column. */
+  /**
+   * Swaying plants are only ever drawn at or below row `bandTop`, and the
+   * jasmine only at or right of column `stripLeft`. The caller uses these to
+   * limit how much of `back` it uploads each frame.
+   */
   bandTop: number;
   stripLeft: number;
 };
@@ -84,7 +109,9 @@ const BladeColors = [
   Colors.leafLight,
 ];
 
-// Flower heads open through these frames. d: dark, p: petal, l: light, y: centre
+// Flower head sprites, with one entry per growth stage, smallest first. Each
+// letter picks a colour from the plant's palette: d dark, p petal, l light
+// petal, y centre. A dot is an empty pixel.
 const Shapes = {
   daisy: [
     ["d"],
@@ -120,8 +147,9 @@ type Species =
   | { kind: "spike"; palettes: PaletteName[]; height: [number, number] }
   | { kind: "plume"; height: [number, number] };
 
-// A warm border: sunflowers, poppies and golds, with feathery grasses, which
-// show the wind best.
+// The species that can grow in the border. Each flowering plant is picked from
+// this list at random, so listing a species twice makes it twice as common.
+// `height` is a range in cells, before the border's height boost is applied.
 const Border: Species[] = [
   { kind: "head", shape: "sun", palettes: ["sun"], height: [11, 18] },
   { kind: "head", shape: "sun", palettes: ["sun"], height: [9, 14] },
@@ -136,28 +164,39 @@ const Border: Species[] = [
   { kind: "head", shape: "tulip", palettes: ["red", "peach"], height: [6, 10] },
   { kind: "plume", height: [10, 16] },
 ];
-// How many times taller the border stands at its crest than in the open meadow.
+// At the tallest point of the border, plants are up to (1 + BORDER_RISE) times
+// their normal height. No plant is ever taller than MAX_HEIGHT_FRACTION of the
+// viewport height.
 const BORDER_RISE = 3.4;
 const MAX_HEIGHT_FRACTION = 0.64;
-// Where up its stem a spike's florets or a plume's feathers begin.
+// How far up the stem, as a fraction of its height, a spike's flowers or a
+// plume's feathers begin.
 const SPIKE_FROM = 0.45;
 const PLUME_FROM = 0.62;
 
+// The jasmine stems. `reach` is how far up the viewport each one climbs, as a
+// fraction of its height. `maxDepth` is how many cells it may wander from the
+// right edge, and `delay` is when it starts growing, in seconds.
 const Climbers = [
   { reach: 0.98, maxDepth: 9, delay: 0, color: Colors.jasmine },
   { reach: 0.9, maxDepth: 13, delay: 3, color: Colors.jasmine },
   { reach: 0.7, maxDepth: 17, delay: 7, color: Colors.stem },
 ];
-// Nothing taller than short grass grows within this many cells of the centre
-// of the button.
+// Radius, in cells, of the clearing around the centre of the GitHub button.
+// Only grass one or two cells tall grows inside it.
 const BUTTON_CLEARING = 7;
 
-// A gusty breeze: light air most of the time, with strong gusts rolling
-// through. Petals are a trickle: never more than MAX_PETALS in the air, and no
-// more than MAX_FALLEN lying in the grass.
+// Wind strength, in arbitrary units where 1 bends grass noticeably. `base` is
+// the constant breeze, `gust` is added at the peak of a gust, and `turbulence`
+// is the size of the small, fast variation.
+//
+// PETAL_RATE scales how often a flower releases a petal; stronger wind releases
+// more. MAX_PETALS limits petals in the air. MAX_FALLEN limits petals lying on
+// the ground, and the oldest is removed first.
 const Wind = { base: 0.3, gust: 1.55, turbulence: 0.4 };
-// How much wind a moving pointer steers: per cell a second of pointer speed, up
-// to a limit, spread over this many cells either side of it.
+// Pointer steering. The wind added is the pointer's speed in cells per second
+// times STEER_GAIN, capped at STEER_LIMIT. STEER_WIDTH is how far either side
+// of the pointer, in cells, the effect stays strong.
 const STEER_GAIN = 0.016;
 const STEER_LIMIT = 2.5;
 const STEER_WIDTH = 70;
@@ -182,7 +221,8 @@ const hash = (i: number, seed: number) => {
   n = Math.imul(n, 1274126177);
   return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 };
-// Smooth one-dimensional noise in [0, 1].
+// Smooth 1D noise in the range 0 to 1. The same inputs always give the same
+// output.
 const noise = (u: number, seed: number) => {
   const i = Math.floor(u);
   const f = u - i;
@@ -203,11 +243,15 @@ type Plant = {
   grown: number;
   startTick: number;
   doneTick: number;
-  // Tall plants grow a pixel a tick, the rest every other tick.
+  // True for tall plants, which grow one cell per tick. The rest grow one cell
+  // every two ticks.
   quick: boolean;
   color: number;
   petals: [number, number];
-  // The stem as a spring: a slow bend, and a faster one that whips the tip.
+  // Sway state, updated by step(). `bend` is the lean of the whole stem and
+  // `whip` is an extra, faster bend near the tip; each has a speed. `lean` is a
+  // fixed tilt so plants don't all stand straight, `gain` is how strongly wind
+  // pushes this plant, and `damping` is how quickly it stops swinging.
   lean: number;
   gain: number;
   damping: number;
@@ -245,7 +289,8 @@ type Petal = {
   phase: number;
   spin: number;
   colors: [number, number];
-  // How many rows above the ground it comes to rest.
+  // How many rows above the bottom edge this petal lands (0 to 2), so that
+  // fallen petals don't form a single line.
   rest: number;
 };
 
@@ -264,8 +309,10 @@ export const createGarden = (options: GardenOptions): Garden => {
   const pick = <T>(list: readonly T[]) =>
     list[Math.floor(random() * list.length)];
 
-  // The jasmine never moves once grown, so it lives on its own layer that is
-  // copied under the swaying plants each frame.
+  // The jasmine doesn't sway, so it is painted once into its own layer as it
+  // grows. render() copies that layer into `back` and draws the moving plants
+  // on top. `climberPriority` records what was painted in each pixel so that
+  // stems don't overwrite flowers.
   const climberLayer = new Uint32Array(cols * rows);
   const climberPriority = new Uint8Array(cols * rows);
   const events: PaintEvent[] = [];
@@ -280,8 +327,7 @@ export const createGarden = (options: GardenOptions): Garden => {
   let tick = 0;
   let time = 0;
   const pointer = { x: 0, y: 0, vx: 0, lastX: 0, lastTime: 0, active: false };
-  // The wind the pointer is steering: it builds as the pointer moves, wherever
-  // on the page that is, and dies away after it stops.
+  // Extra wind currently caused by pointer movement. See step().
   let steered = 0;
 
   const makePlant = (
@@ -318,7 +364,8 @@ export const createGarden = (options: GardenOptions): Garden => {
   const headFrames = (shape: ShapeName, colors: Palette): Cell[][] =>
     Shapes[shape].map((frame) => {
       const offset = (frame[0].length - 1) / 2;
-      // Anchored by its bottom row, so a head sits on its stalk as it opens.
+      // Offsets are relative to the top of the stalk, with the sprite's bottom
+      // row directly above it.
       return frame.flatMap((row, j) =>
         [...row].flatMap((key, i): Cell[] =>
           key === "."
@@ -335,8 +382,10 @@ export const createGarden = (options: GardenOptions): Garden => {
     });
 
   const plantBorder = () => {
-    // The button stands where the border would peak, so the crest sits just to
-    // its left and the planting dips into short grass around it.
+    // `crest` is the column where the border is tallest: just left of the
+    // button's clearing. Heights fall away to the left of it. Right of the
+    // button the boost is much smaller, so plants there don't lean over the
+    // button.
     const crest = buttonX - BUTTON_CLEARING - 7;
     let x = cols - 1;
     let untilFlower = intBetween(3, 8);
@@ -349,7 +398,8 @@ export const createGarden = (options: GardenOptions): Garden => {
         fromButton <= BUTTON_CLEARING
           ? 0
           : smoothstep((fromButton - BUTTON_CLEARING) / 7);
-      // Growth spreads outwards from the corner.
+      // Plants nearer the right edge start growing sooner, so growth spreads
+      // out from the corner.
       const startTick = Math.round((cols - x) * 1.1 + between(0, 50));
       untilFlower -= 1;
       if (untilFlower <= 0 && clearing > 0.15) {
@@ -434,8 +484,10 @@ export const createGarden = (options: GardenOptions): Garden => {
     }
   };
 
-  // Each climber is worked out up front as a list of timed pixels. Only the
-  // leaves are kept live, so they can flutter.
+  // Works out a whole jasmine stem in advance as a list of `events`: pixels,
+  // each with the tick at which it appears. growTick() paints them when they
+  // are due. Leaves are kept separately in `jasmineLeaves` because render()
+  // moves them with the wind.
   const plantClimber = ({
     reach,
     maxDepth,
@@ -489,7 +541,8 @@ export const createGarden = (options: GardenOptions): Garden => {
       });
     };
 
-    // Beside the button there is only the gap between its clearing and the edge.
+    // While the stem is level with the button's clearing it has to stay in the
+    // gap between the clearing and the right edge.
     const gap = Math.max(1, cols - 3 - (buttonX + BUTTON_CLEARING));
     let x = cols - 1 - intBetween(0, Math.min(2, gap));
     let y = rows;
@@ -512,8 +565,9 @@ export const createGarden = (options: GardenOptions): Garden => {
         target = intBetween(limit > 1 ? 1 : 0, limit);
         untilRetarget = intBetween(8, 26);
       }
-      // Drift towards the target depth, but never two sideways steps in a
-      // row: that keeps the line reading as a stem rather than a staircase.
+      // Move one cell sideways towards the target depth, but never on
+      // consecutive steps, which would look like a staircase rather than a
+      // stem.
       const depth = cols - 1 - x;
       sinceShift += 1;
       if (depth !== target && sinceShift >= 2 && random() < 0.6) {
@@ -535,7 +589,8 @@ export const createGarden = (options: GardenOptions): Garden => {
       untilTendril -= 1;
       if (untilTendril <= 0 && limit > 4) {
         let angle = Math.PI + between(-0.7, 0.7);
-        // Tightening the curl as it goes winds the tip into a spiral.
+        // Increasing the turn rate on every step makes the tendril end in a
+        // spiral.
         let curl = between(0.1, 0.24) * (random() < 0.5 ? 1 : -1);
         let tx = x;
         let ty = y;
@@ -587,7 +642,8 @@ export const createGarden = (options: GardenOptions): Garden => {
           }
         }
       } else if (plant.spike && plant.spike.open < plant.spike.count) {
-        // Florets open from the bottom of the spike upwards.
+        // One more flower opens every third tick, starting from the bottom of
+        // the spike.
         if (tick % 3 === 0) {
           plant.spike.open += 1;
           if (plant.spike.open >= plant.spike.count) {
@@ -605,7 +661,7 @@ export const createGarden = (options: GardenOptions): Garden => {
       if (event.x < 0 || event.y < 0 || event.x >= cols || event.y >= rows) {
         continue;
       }
-      // Flowers paint over stems and are never painted over by them.
+      // The higher priority wins, so stems never paint over flowers.
       const index = event.y * cols + event.x;
       if (climberPriority[index] <= event.priority) {
         climberPriority[index] = event.priority;
@@ -614,8 +670,10 @@ export const createGarden = (options: GardenOptions): Garden => {
     }
   };
 
-  // Positive wind blows to the left. A light flutter, plus gust fronts that
-  // roll in from the right with lulls between them.
+  // Wind speed at column x. Positive blows left and negative blows right. It is
+  // the sum of a constant breeze, gusts that travel from right to left with
+  // quiet spells between them, small fast turbulence, and whatever the pointer
+  // adds.
   const windSeed = seed % 1000;
   const wind = (x: number) => {
     if (still) {
@@ -629,8 +687,8 @@ export const createGarden = (options: GardenOptions): Garden => {
       noise(x * 0.085 + time * 1.6, windSeed + 3) -
       0.5 +
       0.5 * (noise(x * 0.3 + time * 3.1, windSeed + 4) - 0.5);
-    // Steered wind is felt across the whole garden, most of all in the part
-    // of it below the pointer.
+    // The pointer's wind is at full strength near the pointer's column and
+    // drops to a quarter far from it.
     const below = Math.exp(-(((x - pointer.x) / STEER_WIDTH) ** 2));
     return (
       Wind.base * (0.8 + 0.4 * noise(time * 0.2, windSeed + 5)) +
@@ -658,8 +716,9 @@ export const createGarden = (options: GardenOptions): Garden => {
   const step = (dt: number) => {
     time += dt;
     pointer.vx *= Math.pow(0.03, dt);
-    // Air has inertia: the steered wind picks up quickly behind a moving
-    // pointer and takes a moment to settle once it stops.
+    // Ease `steered` towards the wind the pointer is asking for: quickly while
+    // it is increasing and slowly while it dies away, so the effect lingers
+    // briefly after the pointer stops.
     const pushed = pointer.active
       ? Math.max(-STEER_LIMIT, Math.min(STEER_LIMIT, -pointer.vx * STEER_GAIN))
       : 0;
@@ -670,9 +729,11 @@ export const createGarden = (options: GardenOptions): Garden => {
         continue;
       }
       const speed = wind(plant.x);
-      // A cantilever in a drag flow. Stiffness falls with height, so grass
-      // flutters while tall stems swing slowly; tall stems are also thicker,
-      // so they catch less wind for their stiffness and cannot fold as far.
+      // Each stem is a damped spring pulled towards a resting bend (`rest`)
+      // that the wind sets. Taller plants get a lower `frequency`, so they
+      // swing more slowly, a lower `limit` on how far they can bend, and a
+      // lower `exposure` to the wind. The result is that grass flutters while
+      // tall flowers sway gently.
       const frequency = 17 / Math.sqrt(Math.max(3, plant.grown));
       const limit = 0.3 + 0.75 * Math.exp(-plant.height / 22);
       const exposure = plant.gain * (0.5 + 0.5 * Math.exp(-plant.height / 30));
@@ -684,8 +745,9 @@ export const createGarden = (options: GardenOptions): Garden => {
         dt;
       plant.bend += plant.bendSpeed * dt;
       if (plant.height > 18) {
-        // A faster second mode, driven by changes in the wind, lets the tip
-        // whip and lag behind the base.
+        // Plants over 18 cells tall also get a second, faster spring that
+        // reacts to changes in the wind. It bends only the top of the stem, so
+        // the tip lags behind and whips.
         plant.windAverage +=
           (speed - plant.windAverage) * Math.min(1, dt * 1.5);
         const whipFrequency = frequency * 2.9;
@@ -703,8 +765,8 @@ export const createGarden = (options: GardenOptions): Garden => {
       return;
     }
 
-    // Petals are plucked more readily in a gust, from whichever of a few
-    // candidates stands in the strongest wind.
+    // Maybe release a petal. Try three random flowers and use the one in the
+    // strongest wind; the chance rises with the wind strength.
     if (blooms.length > 0 && petals.length < MAX_PETALS) {
       let best = blooms[0];
       let strongest = -1;
@@ -723,7 +785,7 @@ export const createGarden = (options: GardenOptions): Garden => {
         release(best.tipX, best.tipY - 2, best.petals);
       }
     }
-    // A strong gust picks fallen petals back up.
+    // In strong wind, occasionally lift a fallen petal back into the air.
     if (fallen.length > 0 && petals.length < MAX_PETALS) {
       const index = Math.floor(Math.random() * fallen.length);
       const lying = fallen[index];
@@ -776,8 +838,9 @@ export const createGarden = (options: GardenOptions): Garden => {
       let y = rows;
       const spike = plant.spike;
       for (let s = 1; s <= plant.grown; s++) {
-        // The bend accumulates along the stem and every step is one pixel
-        // long, so stems curve over and keep their length.
+        // Walk up the stem one cell at a time, turning by an angle that grows
+        // with height. Because every step is one cell long, the stem keeps its
+        // length as it bends.
         const u = s / plant.height;
         const angle =
           plant.lean * u +
@@ -844,7 +907,8 @@ export const createGarden = (options: GardenOptions): Garden => {
       if (leaf.tick > tick) {
         continue;
       }
-      // Leaves lift in a breeze and are pushed back by a gust.
+      // Each jasmine leaf is two pixels. In moderate wind the outer pixel lifts
+      // and brightens; in strong wind it is also pushed one cell to the left.
       const speed = wind(leaf.x + leaf.y * 0.4);
       const pushed = speed > 1.3 ? -1 : 0;
       const lifted = speed > 0.7 && leaf.side < 0 ? -1 : 0;
@@ -868,7 +932,7 @@ export const createGarden = (options: GardenOptions): Garden => {
     let right = 0;
     let bottom = 0;
     for (const petal of petals) {
-      // A petal tumbles, showing its pale underside every half turn.
+      // Alternate between the petal's two colours as it spins.
       put(
         front,
         petal.x,
@@ -925,9 +989,10 @@ export const createGarden = (options: GardenOptions): Garden => {
       }
     },
     age: () => tick,
-    // Stems cannot be longer than the height limit however they bend, heads
-    // add a few rows, and the jasmine's tendrils and flowers reach a little
-    // beyond its deepest stem.
+    // See `bandTop` and `stripLeft` in the Garden type. The margins allow for
+    // flower heads, which add up to 10 rows above the tallest stem, and for
+    // tendrils and flowers, which reach up to 18 cells beyond the deepest
+    // jasmine stem.
     bandTop: Math.max(0, rows - Math.floor(rows * MAX_HEIGHT_FRACTION) - 10),
     stripLeft: Math.max(0, cols - deepest - 18),
   };
