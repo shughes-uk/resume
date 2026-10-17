@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@datadog/browser-rum": "^7.14.0",
+    "@datadog/browser-rum": "^7.15.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.4.0",
@@ -25,9 +25,9 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.85.0",
+    "oxlint": "^1.86.0",
     "prettier": "^3.9.9",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1"
+    "vite": "^8.3.2"
   }
 }
