@@ -9,7 +9,7 @@ Everything runs through pixi; there is no system `terraform`, `node` or `npm`.
 - `pixi run frontend-dev` / `frontend-build` / `frontend-lint` / `frontend-format`
 - `pixi run terraform-plan` / `terraform-apply` (Terraform 1.16, pinned)
 - `pixi run checks` runs every pre-commit hook; `pixi run frontend-preview` serves the built site
-- `pixi run resume-build` regenerates the resume `.pdf` (pandoc + Typst) and `.docx` (pandoc) from `frontend/public/Samantha_Hughes_Resume.md`. Edit the Markdown and rebuild; never edit the binaries. Keep the PDF to one page and dates in ASCII `->`.
+- `pixi run resume-build` regenerates the resume `.pdf` (pandoc + Typst) and `.docx` (pandoc) from `frontend/public/Samantha_Hughes_Resume.md`. Edit the Markdown and rebuild; never edit the binaries. Keep it to two pages, with roles never split across the break, and dates in ASCII `->`.
 - After cloning or a Python bump: `pixi run setup` (deps + git hook), or commits fail with "`pre-commit` not found"
 
 ## Rules
