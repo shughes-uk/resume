@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
       - id: check-ast
@@ -9,21 +9,12 @@ repos:
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.3.5
+    rev: v0.17.1
     hooks:
       # Run the linter.
-      - id: ruff
+      - id: ruff-check
       # Run the formatter.
       - id: ruff-format
-  - repo: local
-    hooks:
-      - name: frontend-checks
-        id: frontend-checks
-        description: Run frontend checks.
-        language: system
-        types_or: [ts, tsx, jsx, javascript]
-        entry: pixi run frontend-lint
-        pass_filenames: false
   - repo: local
     hooks:
       - name: frontend-lint
@@ -33,11 +24,9 @@ repos:
         types_or: [ts, tsx, jsx, javascript]
         entry: pixi run frontend-lint
         pass_filenames: false
-  - repo: local
-    hooks:
       - name: frontend-format
-        id: frontend-checks
-        description: Run frontend checks.
+        id: frontend-format
+        description: Run frontend formatting.
         language: system
         types_or: [ts, tsx, jsx, javascript]
         entry: pixi run frontend-format

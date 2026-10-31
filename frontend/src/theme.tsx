@@ -29,5 +29,11 @@ export const theme = createTheme({
         variant: "contained",
       },
     },
+    MuiListItemIcon: {
+      styleOverrides: {
+        // MUI v9 dropped the default from 56px to 36px; keep the contact list layout
+        root: { minWidth: 56 },
+      },
+    },
   },
 });

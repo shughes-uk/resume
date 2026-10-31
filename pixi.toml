@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["shughes.uk <shughes.uk@gmail.com>"]
 channels = ["conda-forge"]
 description = "Add a short description here"
@@ -7,48 +7,44 @@ platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
 version = "0.1.0"
 
 [tasks]
-backend-collect-statics = { cmd = "ENV_NAME=dev python manage.py collectstatic --noinput", cwd = "backend" }
-backend-dev = { cmd = "DEBUG=True ENV_NAME=dev uvicorn resume.asgi:application --reload --log-config logging.yaml", cwd = "backend" }
-backend-migrations = { cmd = "python manage.py migrate", cwd = "backend" }
-frontend-autogen-client = { cmd = "rm -rf src/api-client && npm run autogen-client", cwd = "frontend", depends-on = [
-    "frontend-install",
-] }
 frontend-build = { cmd = "npm run build", cwd = "frontend", depends-on = [
     "frontend-lint",
 ] }
 frontend-deploy = { cmd = "python scripts/deploy_frontend.py", cwd = ".", depends-on = [
-    "backend-collect-statics",
     "frontend-build",
 ] }
 frontend-dev = { cmd = "npm run dev", cwd = "frontend" }
 frontend-format = { cmd = "npm run format", cwd = "frontend" }
 frontend-install = { cmd = "npm install", cwd = "frontend" }
+frontend-preview = { cmd = "npm run preview", cwd = "frontend", description = "Serve the production build locally", depends-on = [
+    "frontend-build",
+] }
 frontend-lint = { cmd = "npm run lint", cwd = "frontend", depends-on = [
     "frontend-install",
 ] }
+terraform-apply = { cmd = "terraform apply", cwd = "terraform", depends-on = [
+    "terraform-init",
+] }
 terraform-format = { cmd = "terraform fmt", cwd = "terraform" }
+terraform-init = { cmd = "terraform init -input=false", cwd = "terraform" }
+terraform-plan = { cmd = "terraform plan -input=false", cwd = "terraform", depends-on = [
+    "terraform-init",
+] }
+terraform-validate = { cmd = "terraform init -backend=false -input=false && terraform validate", cwd = "terraform", description = "Check the terraform config without touching remote state", env = { TF_DATA_DIR = ".terraform-validate" } }
+checks = { cmd = "pre-commit run --all-files", description = "Run every pre-commit hook over the repo" }
+setup = { cmd = "pre-commit install", description = "Install dependencies and the git hook", depends-on = [
+    "frontend-install",
+] }
 
 [dependencies]
-awscli = ">=2.15.36,<2.16"
-git = ">=2.44.0,<2.45"
-nodejs = ">=20.9.0,<20.10"
-openjdk = ">=21.0.2,<21.1"
-pre-commit = ">=3.7.0,<3.8"
-python = ">=3.11.0,<3.13"
-terraform = ">=1.7.5,<1.8"
+awscli = ">=2.36.42,<3"
+git = ">=2.55.0,<3"
+nodejs = ">=26.8.2,<26.9"
+pre-commit = ">=4.6.2,<5"
+python = ">=3.14.7,<3.15"
+terraform = ">=1.16.1,<2"
 
 [pypi-dependencies]
-boto3 = "*"
-click = "*"
-colorlog = "*"
-django = "*"
-django-allauth = "*"
-django-cors-headers = "*"
-django-environ = "*"
-django-ninja = "*"
-psycopg2-binary = "*"
-python-dotenv = "*"
-ruff = "*"
-uvicorn = "*"
-requests = ">=2.32.4, <3"
-pyjwt = ">=2.10.1, <3"
+boto3 = ">=1.43.98, <2"
+click = ">=8.5.0, <9"
+ruff = ">=0.16.8, <0.17"
