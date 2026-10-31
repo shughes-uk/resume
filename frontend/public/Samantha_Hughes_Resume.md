@@ -15,8 +15,8 @@ Staff software engineer who owns the whole stack, from Kubernetes control planes
 ## Skills
 
 - **Code and AI tools:** Python, Rust, TypeScript, SQL, React, Claude Code, MCP
-- **Kubernetes and AWS:** EKS, Karpenter, KEDA, kopf operators, Pulumi, Terraform
-- **Data and distributed systems:** Postgres, MongoDB, RabbitMQ, Dask, Databricks/Spark
+- **Kubernetes and AWS:** EKS, EC2, Aurora, IAM, Karpenter, KEDA, kopf operators, Pulumi, Terraform
+- **Data and distributed systems:** S3, Postgres, MongoDB, RabbitMQ, Dask, Databricks/Spark
 - **Reliability:** Datadog, incident command, cloud cost
 
 ## Experience
