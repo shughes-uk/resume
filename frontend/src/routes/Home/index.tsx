@@ -98,6 +98,14 @@ const ResumeCard = (): React.ReactElement => {
         >
           Microsoft Word (.docx)
         </Button>
+        <Button
+          variant="contained"
+          href="/Samantha_Hughes_Resume.md"
+          download
+          target="_blank"
+        >
+          Markdown (.md)
+        </Button>
       </CardActions>
     </Card>
   );

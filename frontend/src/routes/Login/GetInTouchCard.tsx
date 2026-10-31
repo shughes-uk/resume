@@ -76,6 +76,18 @@ export const GetInTouchCard = (): React.ReactElement => {
               </ListItemIcon>
               <ListItemText primary="PDF Document (.pdf)" />
             </MenuItem>
+            <MenuItem
+              component={Link}
+              href={"/Samantha_Hughes_Resume.md"}
+              download
+              target="_blank"
+              onClick={() => setIsDownloadMenuOpen(false)}
+            >
+              <ListItemIcon>
+                <Download />
+              </ListItemIcon>
+              <ListItemText primary="Markdown (.md)" />
+            </MenuItem>
           </Menu>
           <Button
             component={Link}
