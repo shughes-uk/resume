@@ -31,3 +31,10 @@ repos:
         types_or: [ts, tsx, jsx, javascript]
         entry: pixi run frontend-format
         pass_filenames: false
+      - name: resume-build
+        id: resume-build
+        description: Rebuild the resume PDF and Word files so they match the Markdown.
+        language: system
+        files: ^(frontend/public/Samantha_Hughes_Resume\.(md|pdf|docx)|resume/.*|pixi\.(toml|lock))$
+        entry: pixi run resume-build
+        pass_filenames: false

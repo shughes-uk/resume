@@ -1,4 +1,4 @@
-#set document(title: "Samantha Hughes Resume", author: "Samantha Hughes")
+#set document(title: "Samantha Hughes Resume", author: "Samantha Hughes", date: none)
 #set page(paper: "us-letter", margin: (x: 0.6in, y: 0.5in))
 #set text(font: "IBM Plex Sans", size: 9.75pt, fill: rgb("#111111"))
 #set par(leading: 0.55em, spacing: 0.6em)

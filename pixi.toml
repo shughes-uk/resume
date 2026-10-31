@@ -26,8 +26,8 @@ resume-build = { depends-on = [
     "resume-pdf",
     "resume-docx",
 ], description = "Build the resume PDF and Word files from the Markdown source" }
-resume-docx = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --reference-doc resume/reference.docx -o frontend/public/Samantha_Hughes_Resume.docx", description = "Build the resume Word file" }
-resume-pdf = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --template resume/template.typ --pdf-engine typst --pdf-engine-opt=--ignore-system-fonts --pdf-engine-opt=--font-path=$CONDA_PREFIX/fonts -o frontend/public/Samantha_Hughes_Resume.pdf", description = "Build the resume PDF" }
+resume-docx = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --reference-doc resume/reference.docx -o frontend/public/Samantha_Hughes_Resume.docx", description = "Build the resume Word file", env = { SOURCE_DATE_EPOCH = "0" } }
+resume-pdf = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --template resume/template.typ --pdf-engine typst --pdf-engine-opt=--ignore-system-fonts --pdf-engine-opt=--font-path=$CONDA_PREFIX/fonts -o frontend/public/Samantha_Hughes_Resume.pdf", description = "Build the resume PDF", env = { SOURCE_DATE_EPOCH = "0" } }
 terraform-apply = { cmd = "terraform apply", cwd = "terraform", depends-on = [
     "terraform-init",
 ] }
