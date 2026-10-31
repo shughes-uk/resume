@@ -4,8 +4,8 @@
 - Email: [shughes.uk@gmail.com](mailto:shughes.uk@gmail.com)
 - [Portfolio site](https://samanthahughes.me/)
 - [Schedule a meeting](https://calendly.com/shughes-uk/30min)
-- LinkedIn: linkedin.com/in/samantha-hughes-2b8b7716
-- GitHub: github.com/shughes-uk and github.com/samantha-earthmover
+- LinkedIn: [linkedin.com/in/samantha-hughes-2b8b7716](https://www.linkedin.com/in/samantha-hughes-2b8b7716/)
+- GitHub: [github.com/shughes-uk](https://github.com/shughes-uk) and [github.com/samantha-earthmover](https://github.com/samantha-earthmover)
 - Portland, Oregon (remote US)
 
 ## Summary
@@ -31,7 +31,7 @@ Sep 2025 -> Present
 - Led a cost program checked against the AWS bill: run rate fell about 45% in two months.
 - Rebuilt full-stack observability on Datadog and made AI-assisted debugging (Claude with the Datadog MCP) a team norm, so engineers across the org can now handle production outages.
 - Redesigned core web app flows: merged the org dashboard and repo list into one home page, rebuilt the signed-in landing page and bucket creation, and added global search.
-- Open source: fixed an Icechunk GC deadlock. Built triangular, a spec-first convex hull and Delaunay triangulation library written entirely through agentic coding. It runs in production and is up to 300x faster than Triangle on some inputs.
+- Open source: fixed an [Icechunk](https://github.com/earth-mover/icechunk) GC deadlock. Built [triangular](https://github.com/earth-mover/triangular), a spec-first convex hull and Delaunay triangulation library written entirely through agentic coding. It runs in production and is up to 300x faster than Triangle on some inputs.
 
 ### Capital One - Senior Lead Software Engineer
 
@@ -50,7 +50,7 @@ Jun 2024 -> Mar 2025
 
 Mar 2021 -> May 2024
 
-- Staff: conceived and built package sync, which copies local Python environments to the cloud 3x faster than Docker images. Removed the top cause of Dask cloud errors; increased conversion. Built support analytics so support became proactive; churn fell drastically.
+- Staff: conceived and built [package sync](https://docs.coiled.io/user_guide/software/sync.html), which copies local Python environments to the cloud [3x faster](https://medium.com/coiled-hq/just-in-time-python-environments-ade108ec67b6) than Docker images. Removed the top cause of Dask cloud errors; increased conversion. Built support analytics so support became proactive; churn fell drastically.
 - Team Lead: planned a year-long roadmap and led a core rewrite, taking reliability from 70% to 99.9% and boots up to 5x faster. CI/CD and team training took deploys from monthly to several a day.
 - Engineer: cut CI from over an hour to under 5 minutes at a fifth of the cost; moved all AWS infrastructure to Terraform.
 
