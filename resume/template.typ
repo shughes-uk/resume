@@ -36,12 +36,9 @@
 
 #let role(left, right) = block(above: 0.9em, below: 0.45em, sticky: true, {
   show "-": set text(fill: muted)
-  grid(
-    columns: (1fr, auto),
-    column-gutter: 1em,
-    left,
-    text(fill: muted, number-width: "tabular", right),
-  )
+  left
+  text(fill: muted)[#h(0.45em)·#h(0.45em)]
+  text(fill: muted, number-width: "tabular", right)
 })
 
 #let sep = [#h(0.5em)#text(fill: muted)[·]#h(0.5em)]
