@@ -49,10 +49,8 @@ local function role(header, dates)
   if is_typst then
     return { pandoc.RawBlock("typst", "#role[" .. to_typst(left) .. "][" .. to_typst(dates) .. "]") }
   end
-  return {
-    pandoc.Header(3, left, header.attr),
-    pandoc.Div({ pandoc.Para(dates) }, { ["custom-style"] = "Dates" }),
-  }
+  left:extend({ pandoc.RawInline("openxml", "<w:r><w:tab/></w:r>"), pandoc.Span(dates, { ["custom-style"] = "Role Dates" }) })
+  return { pandoc.Header(3, left, header.attr) }
 end
 
 -- Typst reads "->" in markup as an arrow glyph; ATS parsers need the ASCII form.

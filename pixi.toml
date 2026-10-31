@@ -27,6 +27,7 @@ resume-build = { depends-on = [
     "resume-docx",
 ], description = "Build the resume PDF and Word files from the Markdown source" }
 resume-docx = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --reference-doc resume/reference.docx -o frontend/public/Samantha_Hughes_Resume.docx", description = "Build the resume Word file", env = { SOURCE_DATE_EPOCH = "0" } }
+resume-reference = { cmd = "python resume/make_reference.py resume/reference.docx", description = "Regenerate the Word reference doc from pandoc's default" }
 resume-pdf = { cmd = "pandoc frontend/public/Samantha_Hughes_Resume.md --lua-filter resume/filter.lua --template resume/template.typ --pdf-engine typst --pdf-engine-opt=--ignore-system-fonts --pdf-engine-opt=--font-path=$CONDA_PREFIX/fonts -o frontend/public/Samantha_Hughes_Resume.pdf", description = "Build the resume PDF", env = { SOURCE_DATE_EPOCH = "0" } }
 terraform-apply = { cmd = "terraform apply", cwd = "terraform", depends-on = [
     "terraform-init",
