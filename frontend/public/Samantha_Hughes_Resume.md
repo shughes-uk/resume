@@ -72,6 +72,12 @@ Apr 2017 -> Feb 2018
 
 - Built executive dashboards over billions of package-download rows.
 
+### WebBrick Systems - Software Engineer
+
+Jul 2009 -> Jan 2011
+
+- Integrated high-end media systems with home automation equipment.
+
 ## Education
 
 University of Reading, UK - AI & Cybernetics, 2006 -> 2012
