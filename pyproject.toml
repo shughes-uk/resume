@@ -3,3 +3,6 @@ target-version = "py314"
 
 [tool.ruff.lint]
 select = ["B", "E", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"resume/make_reference.py" = ["E501"]
