@@ -11,20 +11,20 @@ RULE = "C4C8CF"
 ACCENT = "1F4F8F"
 FONT = "Arial"
 LIST_FONTS = ("Symbol", "Courier New", "Wingdings")
-BODY_SIZE = 19
-ROLE_SIZE = 20
-DATES_SIZE = 18
-SECTION_SIZE = 20
-NAME_SIZE = 36
+BODY_SIZE = 21
+ROLE_SIZE = 22
+DATES_SIZE = 20
+SECTION_SIZE = 22
+NAME_SIZE = 40
 PAGE_WIDTH = 12240
-SIDE_MARGIN = 792
+SIDE_MARGIN = 1008
 TEXT_WIDTH = PAGE_WIDTH - 2 * SIDE_MARGIN
-BODY_LINE = 230
-ROLE_LINE = 260
-DATES_LINE = 230
-COMPACT_AFTER = 20
-SECTION_BEFORE = 140
-ROLE_BEFORE = 100
+BODY_LINE = 300
+ROLE_LINE = 300
+DATES_LINE = 280
+COMPACT_AFTER = 80
+SECTION_BEFORE = 320
+ROLE_BEFORE = 220
 
 FONTS = (
     f'<w:rFonts w:ascii="{FONT}" w:hAnsi="{FONT}" w:eastAsia="{FONT}" w:cs="{FONT}" />'
@@ -185,7 +185,7 @@ DOC_DEFAULTS = (
 
 SECTION = (
     f'<w:pgSz w:w="{PAGE_WIDTH}" w:h="15840" />'
-    f'<w:pgMar w:top="720" w:right="{SIDE_MARGIN}" w:bottom="576" w:left="{SIDE_MARGIN}" w:header="360" w:footer="360" w:gutter="0" />'
+    f'<w:pgMar w:top="1008" w:right="{SIDE_MARGIN}" w:bottom="1008" w:left="{SIDE_MARGIN}" w:header="360" w:footer="360" w:gutter="0" />'
     '<w:cols w:space="720" />'
 )
 

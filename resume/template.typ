@@ -6,13 +6,13 @@
 #let accent = rgb("#1f4f8f")
 #let semibold = "IBM Plex Sans SmBld"
 
-#set page(paper: "us-letter", margin: (x: 0.6in, top: 0.5in, bottom: 0.45in))
-#set text(font: "IBM Plex Sans Text", size: 9.75pt, fill: ink, hyphenate: false, costs: (runt: 400%))
-#set par(leading: 0.56em, spacing: 0.66em, linebreaks: "optimized")
+#set page(paper: "us-letter", margin: (x: 0.75in, y: 0.7in))
+#set text(font: "IBM Plex Sans Text", size: 10.5pt, fill: ink, hyphenate: false, costs: (runt: 400%))
+#set par(leading: 0.68em, spacing: 0.9em, linebreaks: "optimized")
 #set list(
   indent: 0pt,
-  body-indent: 0.55em,
-  spacing: 0.58em,
+  body-indent: 0.6em,
+  spacing: 0.85em,
   marker: text(fill: muted, baseline: -0.05em)[•],
 )
 #show strong: set text(font: semibold, weight: 600)
@@ -23,8 +23,8 @@
 #show heading.where(level: 1): it => block(below: 0.5em,
   text(font: "IBM Plex Sans", size: 22pt, weight: "bold", tracking: -0.01em, it.body))
 
-#show heading.where(level: 2): it => block(above: 1.15em, below: 0.6em, sticky: true, {
-  set text(font: semibold, weight: 600, size: 9.75pt, fill: accent, tracking: 0.09em)
+#show heading.where(level: 2): it => block(above: 2em, below: 0.95em, sticky: true, {
+  set text(font: semibold, weight: 600, size: 10.5pt, fill: accent, tracking: 0.09em)
   grid(
     columns: (auto, 1fr),
     column-gutter: 0.6em,
@@ -34,11 +34,13 @@
   )
 })
 
-#let role(left, right) = block(above: 0.9em, below: 0.45em, sticky: true, {
+#let roleblock = block.with(breakable: false, above: 1.7em, below: 0pt)
+
+#let role(left, right) = block(above: 0pt, below: 0.65em, sticky: true, {
   show "-": set text(fill: muted)
   left
   text(fill: muted)[#h(0.45em)·#h(0.45em)]
-  text(fill: muted, number-width: "tabular", right)
+  box(text(fill: muted, number-width: "tabular", right))
 })
 
 #let sep = [#h(0.5em)#text(fill: muted)[·]#h(0.5em)]

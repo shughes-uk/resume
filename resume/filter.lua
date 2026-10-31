@@ -49,7 +49,8 @@ local function role(header, dates)
   if is_typst then
     return { pandoc.RawBlock("typst", "#role[" .. to_typst(left) .. "][" .. to_typst(dates) .. "]") }
   end
-  left:extend({ pandoc.RawInline("openxml", "<w:r><w:tab/></w:r>"), pandoc.Span(dates, { ["custom-style"] = "Role Dates" }) })
+  local unbroken = dates:walk({ Space = function() return pandoc.Str("\u{A0}") end })
+  left:extend({ pandoc.RawInline("openxml", "<w:r><w:tab/></w:r>"), pandoc.Span(unbroken, { ["custom-style"] = "Role Dates" }) })
   return { pandoc.Header(3, left, header.attr) }
 end
 
@@ -93,8 +94,17 @@ local layout = {
       elseif b.t == "BulletList" and not seen_section then
         blocks:insert(contact_line(b.content))
       elseif b.t == "Header" and b.level == 3 and nxt and nxt.t == "Para" then
-        blocks:extend(role(b, nxt.content))
-        i = i + 1
+        local bullets = doc.blocks[i + 2]
+        if is_typst and bullets and bullets.t == "BulletList" then
+          blocks:insert(pandoc.RawBlock("typst", "#roleblock["))
+          blocks:extend(role(b, nxt.content))
+          blocks:insert(bullets)
+          blocks:insert(pandoc.RawBlock("typst", "]"))
+          i = i + 2
+        else
+          blocks:extend(role(b, nxt.content))
+          i = i + 1
+        end
       else
         blocks:insert(b)
       end
